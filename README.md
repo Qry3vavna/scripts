@@ -1,4 +1,17 @@
 # scripts
+=======
+<pre>
+                              _
+       _   _                
+      | | (_)               
+   ___| |_ _ _ __ ___   ___ 
+  / __| __| | '_ ` _ \ / _ \
+ | (__| |_| | | | | | |  __/
+  \___|\__|_|_| |_| |_|\___|
+                            
+                            
+v0.1 SEP2014 ::Qry3v@vna~*
+</pre>
 Tool used to time-stomp the ctime of file in Unix by temporarily resetting the system time<br/>
 Yes it's messy, you don't have to use it, it's just one way to do things...<br/>
 
