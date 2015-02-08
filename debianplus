@@ -1,0 +1,44 @@
+# Part of github/qry3vavna/debianplus
+#
+alias get='apt-get install -y '
+alias update='apt-get update -y && apt-get upgrade -y'
+alias cls='clear'
+bounce() {
+  # bounce given interface
+  if [ "$1" != "" ];then
+    ifdown $1 && ifup $1
+  fi
+}
+p() { 
+  # search through ps
+  terms="${*--}"
+  q="grep -v grep"
+  for t in ${terms[*]};do
+    q="$q|grep -i -- $t"
+  done
+  eval "ps -ef|$q"
+  terms=; t=; q=
+}
+search() {
+  # search for tools not yet installed
+  if [ "$1" != "" ];then
+    term="$1"
+    shift
+    terms="${*--}"
+    for t in ${terms[*]};do
+      q="$q|grep -i -- $t"
+    done
+    eval "apt-cache search $term $q"
+    terms=; term=; t=; q=
+  fi
+}
+show() {
+  # show / search tools installed
+  if [ "$1" != "" ];then
+    term="$1"
+    aptitude show $term 2>/dev/null
+    [ $? -gt 0 ] && echo $term not found
+    dpkg -L $term 2>/dev/null
+    [ $? -gt 0 ] && echo $term not installed
+  fi
+}
