@@ -18,5 +18,8 @@ GNU core utilities like grep, sed, cat, tr & others.
 Ran locally on a system, optionally select a subset of commands.
 Can also print out the commands for other systems vs running them.
 
+##pacounts
+Used to count packets sent and received for learning and testing
+
 ##poports
 Tool to print out top ports from nmap services list
