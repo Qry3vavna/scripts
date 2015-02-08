@@ -1,0 +1,78 @@
+#!/bin/bash
+# Packet Counter
+
+main() {
+  initialize
+  parse_args $@
+  the_action
+}
+
+initialize() {
+  version="0.1 pacount"
+  dev=eth0
+}
+
+parse_args() {
+  [[ "$#" == 0 ]] && ACTION=print_count
+  while [ "$1" != "" ]; do
+    case $1 in
+      -d*|--d*) shift;dev=$1;;
+      -i*|--i*) ACTION=install;;
+      -p*|--p*) ACTION=print_count;;
+      -r*|--r*) ACTION=reset_count;;
+      -u|-u*|--u*|U*|-U*|--U*|u*) ACTION=uninstall;;
+      -h*|h*|H*|-H*|/?|--help|*) usage;exit;;
+    esac
+    shift
+  done
+}
+
+the_action() {
+  # The magical part .~*`
+  IP=$(eval "ip -o -4 add|awk '/$dev/{split(\$4,a,\"/\"); print a[1]}'")
+  case $ACTION in
+    install) # Add new chains for counting packets
+      iptables -I INPUT 1 -s "$IP" -j ACCEPT 2>/dev/null
+      iptables -I OUTPUT 1 -s "$IP" -j ACCEPT 2>/dev/null
+    ;;
+    print_count) # Stats please
+      echo
+      iptables -nv -L |grep -A3 "INPUT\|OUTPUT"|grep --color -C3 "pkts\|bytes"
+    ;;
+    reset_count) # Reset the counters
+      iptables -Z 2>/dev/null
+    ;;
+    uninstall) # Remove the chains
+      iptables -F # Flush first
+      iptables -D INPUT 1 2>/dev/null
+      iptables -D OUTPUT 1 2>/dev/null
+    ;;
+  esac
+}
+
+usage() {
+  cat << EOF
+
+$0 $version
+
+Used to count packets sent and received for learning and testing
+
+USAGE: $0 [OPTIONS] file
+
+      -d|--dev <NIC>	  Specifies ethernet dev to get source IP address from defaults to eth0
+
+      -i|--install  		Installs iptables rules as 1st entry in INPUT/OUTPUT with specified source IP
+
+      -p|--print|*      Prints the latest packet counts
+
+      -r|--reset        Resets the counters
+
+      -u|--uninstall		Will remove the 1st rules after flushing iptables
+
+      -h|--help			    This cruft
+
+EOF
+}
+
+#=-+-=#
+main $@
