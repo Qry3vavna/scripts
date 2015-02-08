@@ -9,7 +9,7 @@ main() {
 
 initialize() {
   version="0.1 install"
-  list=(ctime hs poports)
+  list=(ctime hs pacounts poports)
   ACTION=
 }
 
