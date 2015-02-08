@@ -1,5 +1,4 @@
 # scripts
-=======
 A collection of scripts used to embetter Linux, <br>
 specifically used on Kali Linux.<br>
 Use install.sh to install these in /usr/local/bin/<br>
