@@ -1,5 +1,10 @@
 # scripts
 =======
+A collection of scripts used to embetter Linux, <br>
+specifically used on Kali Linux.<br>
+Use install.sh to install these in /usr/local/bin/<br>
+<hr>
+##ctime
 <pre>
                               _
        _   _                
@@ -17,7 +22,7 @@ Yes it's messy, you don't have to use it, it's just one way to do things...<br/>
 
 ./ctime.sh 0.1 ctime-mod
 
-#USAGE: ./ctime.sh [OPTIONS] file
+###USAGE: ./ctime.sh [OPTIONS] file
 
       -c|--ctime  <DATE>        Set the time to a custom date
                                 See the 'date' command for an example
