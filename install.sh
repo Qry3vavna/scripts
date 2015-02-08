@@ -61,7 +61,7 @@ vimrc_check() {
 # Check for vimrc and replace if necessary
   if [[ -e ~/.vimrc ]];then # it already exists
     if [[ $(grep -i qry3 ~/.vimrc) ]];then # we're there
-      if [[ "$(sha1sum ~/.vimrc|cut -d' ' -f1)" != "79a0470d7e2e4aa696446bc312294bb45ff3b867" ]];then # not our v0.1 copy :(
+      if [[ "$(sha1sum ~/.vimrc|cut -d' ' -f1)" != "$(sha1sum .vimrc|cut -d' ' -f1)" ]];then # not our v0.1 copy :(
         if [[ "$ACTION" == "install" ]];then
           cp ~/.vimrc{,.script} # Archive current
           cp ./.vimrc ~/.vimrc
