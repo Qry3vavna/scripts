@@ -9,36 +9,41 @@
   \__,_|\___|_.__/|_|\__,_|_| |_|        
                                          
                                          
-v0.1 JAN2015 ::Qry3v@vna~*
+v0.1.1 FEB2015 ::Qry3v@vna~*
 </pre>
 Collection of scripts and aliases for my convenience to type less and do more.
 
 ###USAGE:
 append to your .bashrc
-`cat aliases >>~/.bashrc`
+`echo ". $(pwd)/.debianplus" >>~/.bashrc`
 
 ###ALIASES:
-`get`
->Shortcut for apt-get install -y, to quickly install given tool<br/>
->Usage: `get tool`
-
-`update`
->Shortcut for apt-get update -y && apt-get upgrade -y
-
-`cls`
->Shortcut for clear (though CTRL+L is even less typing)
-
 `bounce`
 >Shortcut for ifdown interface && ifup interface<br/>
 >Interface has to be defined in /etc/network/interfaces<br/>
 >Usage: `bounce interface`<br/>
 >Example: `bounce eth0`
 
+`cls`
+>Shortcut for clear (though CTRL+L is even less typing)
+
+`get`
+>Shortcut for apt-get install -y, to quickly install given tool<br/>
+>Usage: `get tool`
+
+`nohist`
+>Shortcut to disable Bash history for your current terminal session
+
 `p`
 >Shortcut for ps -ef, but also allows for cascading greps<br/><br/>
 >Usage: `p`             Same as ps -ef<br/>
 >Usage: `p pts`         Same as ps -ef | grep -i pts | grep -v grep<br/>
 >Usage: `p pts bash`    Same as ps -ef | grep -i pts | grep -i bash | grep -v grep
+
+`scriptd`
+>Toggle turning on or off script tool<br/>
+>script will log all keyboard strokes and timing in user's home directory/.scripts/<br/>
+>scriptreplay can be used to replay all the session given the log files.
 
 `search`
 >Search for tools in your repos by keywords<br/>
@@ -50,3 +55,6 @@ append to your .bashrc
 >Search for tools installed by keyword, if installed shows its info<br/>
 >Shortcut for aptitude show tool and dpkg -L tool<br/>
 >Usage: `show iptables`
+
+`update`
+>Shortcut for apt-get update -y && apt-get upgrade -y
