@@ -3,6 +3,7 @@
 alias get='apt-get install -y '
 alias update='apt-get update -y && apt-get upgrade -y'
 alias cls='clear'
+alias nohist='unset HISTFILE HISTSIZE HISTFILESIZE'
 bounce() {
   # bounce given interface
   if [ "$1" != "" ];then
@@ -41,4 +42,31 @@ show() {
     dpkg -L $term 2>/dev/null
     [ $? -gt 0 ] && echo $term not installed
   fi
+}
+scriptd() {
+  # Function checks/creates script file
+  # Toggles sourcing that script in bashrc
+  fc="$HOME/.scriptf"
+  if [[ ! -e "$fc" ]];then
+    echo '# Start script sniffer for bash sessions'>$fc
+    echo 'if [[ -z "$UNDER_SCRIPT" ]]; then'>>$fc
+    echo 'logdir=$HOME/.scripts'>>$fc
+    echo 'if [[ ! -d $logdir ]];then'>>$fc
+    echo '  mkdir $logdir'>>$fc
+    echo 'fi'>>$fc
+    echo 'logfile=$logdir/$(date +%F_%T).$$.log'>>$fc
+    echo 'timefile=$logdir/t_$(date +%F_%T).$$.log'>>$fc
+    echo 'export UNDER_SCRIPT=$logfile'>>$fc
+    echo 'script -f --timing=$timefile -q $logfile'>>$fc
+    echo 'exit'>>$fc
+    echo 'fi'>>$fc
+  fi
+  if [[ $(grep scriptf ~/.bashrc) ]];then
+    sed -i '/scriptf/d' ~/.bashrc
+  else
+    echo -e ". $fc # scriptf">>~/.bashrc
+    startscriptd='. $fc'
+    eval "$startscriptd"
+  fi
+
 }
