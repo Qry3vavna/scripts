@@ -3,6 +3,7 @@
 alias get='apt-get install -y '
 alias update='apt-get update -y && apt-get upgrade -y'
 alias cls='clear'
+alias l='ls -al'
 alias nohist='unset HISTFILE HISTSIZE HISTFILESIZE'
 bounce() {
   # bounce given interface
