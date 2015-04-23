@@ -22,7 +22,7 @@ parse_input() {
   while [ $# -ge 1 ]; do
     case "$1" in
       -m*|--m*)
-        module="${2}" # default to windows
+        module="${2}" # default to all if left unset
         module="$(echo $module|grep '[[:alpha:]]')" # sanity check, only allows alpha_numeric characters
         f_check selected_module $src/$module # check the thing exists
         [ -z $modules ] && modules=($module) || modules=(${modules[*]} ${module}) # Make a list of all the modules given
