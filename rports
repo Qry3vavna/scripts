@@ -9,7 +9,7 @@ main() {
 
 initialize() {
   version='v0.1 APR2015 ::Qry3v@vna~*'
-  src="/usr/share/metasploit-framework/modules/exploits" # Default location of Debian OS for nmap file
+  src="/usr/share/metasploit-framework/modules/exploits" # Default location of Debian OS for msf exploits
   f_check source_folder $src
   verbose=0
   for dependency in find sed grep sort;do
