@@ -1,0 +1,134 @@
+#!/bin/bash
+# Print ports from metasploit modules
+
+main() {
+  initialize
+  parse_input $*
+  logic
+}
+
+initialize() {
+  version='v0.1 APR2015 ::Qry3v@vna~*'
+  src="/usr/share/metasploit-framework/modules/exploits" # Default location of Debian OS for nmap file
+  f_check source_folder $src
+  verbose=0
+  for dependency in find sed grep sort;do
+    f_check $dependency $(which $dependency)
+  done
+}
+
+parse_input() {
+  # Parse each argument given until there are no more arguments
+  while [ $# -ge 1 ]; do
+    case "$1" in
+      -m*|--m*)
+        module="${2}" # default to windows
+        module="$(echo $module|grep '[[:alpha:]]')" # sanity check, only allows alpha_numeric characters
+        f_check selected_module $src/$module # check the thing exists
+        [ -z $modules ] && modules=($module) || modules=(${modules[*]} ${module}) # Make a list of all the modules given
+        v_echo "[*] module folder selected: ${modules[*]}"
+        shift
+      ;;
+      -n) # Add new line
+        endchar="\n"
+      ;;
+      -l*|--l*)
+        v_echo "[*] module folder selected: $2"
+        ls -F $src 2>/dev/null
+        exit 0
+      ;;
+      -v|--v|--verb*|-verb*)
+        ((verbose++))
+        v_echo "[*] verbosity selected: $verbose"
+      ;;
+      -V*|--V*|--vers*)
+        echo "$0 $version"
+        exit 0
+      ;;
+      -h*|--h*|?)
+        usage
+      ;;
+      -D) set -vx;; # Debug mode
+    esac
+    shift
+  done
+}
+
+f_check() {
+  # Check given file
+  v_echo "[*] f_check args: $1, $2"
+  if [ ! -e "$2" ];then
+    echo "[-] ERROR: $1 does not exist, check yourself."
+    exit 2
+  fi
+}
+
+logic() {
+  # Run the search...
+  v_echo "[*] RPORTs found:"
+  find $(for mod in ${modules[*]};do echo -n "$src/$mod ";done) -type f -iname "*.rb" -exec sed -nr '/RPORT/s/.*\(([0-9]+)(\S*)\).*/\1/p' {} \; |sort -nu|tr '\n' ','|eval "sed 's/.$/$endchar/'"
+  # For each modules folder given...
+  # Look through all ruby files, for lines with RPORT in them, then print out the numbers inbetween ().
+  # Sort the list and select only unique entries, then translate newlines to commas and
+  # lastly strip the last comma character or replace it with a new-line.
+}
+
+usage() {
+  # The help page
+  logo
+cat << EOF
+
+$version
+
+Tool to print out the RPORTs from each metasploit ruby exploit module selected
+
+USAGE: $0 <options>
+
+OPTIONS:
+        -l --list               Prints out all the modules to select from
+        -m --module <folder>    Path of exploit module folder to search through
+                                  default=all ;use list to view them all
+        -n                      Add new-line character to the end of the list
+        -v --verbose            Displays more stuff to stdout
+        -V --version            Prints version and exits
+        -h --help ?             This cruft...
+
+EXAMPLES:
+    $0 -m windows
+    Prints out a commas separated list of all the unique ports listed as RPORT in exploits/windows/*.rb
+
+
+LICENSE:
+    Apache 2.0 :
+      Required:		- Include license and copyright notice
+			- State any changes made from this code
+
+      Permitted:	- Use commercially	- Grant patents
+			- Ditribute		- Use privately
+			- Modify		- Sublicense
+
+      Forbidden:	- Hold us liable
+			- Use trademark
+EOF
+exit 0
+}
+
+v_echo() {
+  # Extra extra read all about it
+  if [[ "$verbose" -gt 0 ]];then
+    echo "$*"
+  fi
+}
+
+logo() {
+    echo -e "
+    ICAgICAgICAgICAgICAgICAgICAgICAgXwogICAgICAgICAgICAgICAgICAgICAg
+    IHwgfAogIF8gX18gXyBfXyAgIF9fXyAgXyBfX3wgfF8gX19fCiB8ICdfX3wgJ18g
+    XCAvIF8gXHwgJ19ffCBfXy8gX198CiB8IHwgIHwgfF8pIHwgKF8pIHwgfCAgfCB8
+    X1xfXyBcCiB8X3wgIHwgLl9fLyBcX19fL3xffCAgIFxfX3xfX18vCiAgICAgIHwg
+    fAogICAgICB8X3wK"|openssl enc -a -d
+}
+
+# DO IT
+#=---=#
+main $*
