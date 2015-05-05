@@ -22,11 +22,7 @@ parse_input() {
   while [ $# -ge 1 ]; do
     case "$1" in
       -m*|--m*)
-<<<<<<< HEAD
         module="${2}" # set module directory to given argument
-=======
-        module="${2}" # default to all if left unset
->>>>>>> 254f13e99a9bf3bbdd3a169e6cf23a4fb1369ad6
         module="$(echo $module|grep '[[:alpha:]]')" # sanity check, only allows alpha_numeric characters
         f_check selected_module $src/$module # check the thing exists
         [ -z $modules ] && modules=($module) || modules=(${modules[*]} ${module}) # Make a list of all the modules given
@@ -63,11 +59,8 @@ f_check() {
   v_echo "[*] f_check args: $1, $2"
   if [ ! -e "$2" ];then
     echo "[-] ERROR: $1 does not exist, check yourself."
-<<<<<<< HEAD
     echo "[*] MODULES:"
     eval "$0 -l"
-=======
->>>>>>> 254f13e99a9bf3bbdd3a169e6cf23a4fb1369ad6
     exit 2
   fi
 }
@@ -96,11 +89,7 @@ USAGE: $0 <options>
 OPTIONS:
         -l --list               Prints out all the modules to select from
         -m --module <folder>    Path of exploit module folder to search through
-<<<<<<< HEAD
                                   use list to view them all
-=======
-                                  default=all ;use list to view them all
->>>>>>> 254f13e99a9bf3bbdd3a169e6cf23a4fb1369ad6
         -n                      Add new-line character to the end of the list
         -v --verbose            Displays more stuff to stdout
         -V --version            Prints version and exits
