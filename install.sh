@@ -10,7 +10,10 @@ main() {
 initialize() {
   version="0.1 install"
   list=(ctime hs pacounts poports rports)
+<<<<<<< HEAD
   manf=(rports.man)
+=======
+>>>>>>> 254f13e99a9bf3bbdd3a169e6cf23a4fb1369ad6
   ACTION=
 }
 
