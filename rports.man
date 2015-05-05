@@ -1,5 +1,5 @@
 .\" Manpage for rports : v0.1 APR2015 ::Qry3v@vna~*
-.TH rports 1 "01 Apr 2015" "0.1" "rports man page"
+.TH rports 1 "05 May 2015" "0.1" "rports man page"
 .SH NAME
 rports \- print list of rports from Metasploit modules
 .SH SYNOPSIS
