@@ -9,7 +9,8 @@ main() {
 
 initialize() {
   version="0.1 install"
-  list=(ctime hs pacounts poports)
+  list=(ctime hs pacounts poports rports)
+  manf=(rports.man)
   ACTION=
 }
 
@@ -34,6 +35,15 @@ the_action() {
       chmod 755 /usr/local/bin/$tool
     else
       rm -f /usr/local/bin/$tool
+    fi
+  done
+  for manfile in ${manf[*]};do
+    if [[ "$ACTION" == "install" ]];then
+      mfile=${manfile%.*}
+      cp ./$manfile /usr/local/man/man1/${mfile}.1
+      gzip /usr/local/man/man1/${mfile}.1
+    else
+      rm /usr/local/man/man1/${mfile}.1
     fi
   done
 }

@@ -1,0 +1,57 @@
+.\" Manpage for rports : v0.1 APR2015 ::Qry3v@vna~*
+.TH rports 1 "01 Apr 2015" "0.1" "rports man page"
+.SH NAME
+rports \- print list of rports from Metasploit modules
+.SH SYNOPSIS
+.B rports [OPTIONS]
+.SH DESCRIPTION
+.B Tool to print out the RPORTs from each metasploit ruby exploit module selected
+.SH OPTIONS
+.IP "-l     --list"
+Prints out all the modules to select from
+.IP "-m --module <folder>"
+Path of exploit module folder to search through
+Use list (-l) to view them all
+.IP "-n"
+Add new-line character to the end of the list
+.IP "-v --verbose"
+Displays more stuff to stdout
+.IP "-V --version"
+Prints version and exits
+.IP "-h --help ?"
+This cruft...
+.SH EXAMPLES
+.IP "rports -m windows"
+Prints out a commas separated list of all the unique ports listed as RPORT in exploits/windows/*.rb
+.IP "rports -m linux -n"
+Prints out a comma separated list of all the unique ports listed as RPORT in exploits/linux/*.rb with a new line at the end
+.IP "rport -l"
+Prints out the list of modules under metasploit's exploit folder
+.\".SH SEE ALSO"
+.SH AUTHOR
+Qry3vavna (github.com/qry3vavna)
+.SH LICENSE
+Apache 2.0 :
+.IP Required:
+.IP \[bu]
+Include license and copyright notice
+.IP \[bu]
+State any changes made from this code
+.IP Permitted:
+.IP \[bu]
+Use commercially
+.IP \[bu]
+Grant patents
+.IP \[bu]
+Ditribute
+.IP \[bu]
+Use privately
+.IP \[bu]
+Modify
+.IP \[bu]
+Sublicense
+.IP Forbidden:
+.IP \[bu]
+Hold us liable
+.IP \[bu]
+Use trademark
