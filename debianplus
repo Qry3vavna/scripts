@@ -5,6 +5,9 @@ alias update='apt-get update -y && apt-get upgrade -y'
 alias cls='clear'
 alias l='ls -al'
 alias nohist='unset HISTFILE HISTSIZE HISTFILESIZE'
+alias zenmap='notify-send "HEY" "Stop being lazy\n Unless you want to use the mapping feature \
+  \n you should really use nmap\n from the command line instead" 2>/dev/null ; /usr/bin/zenmap'
+[[ "$(grep sleep $(which armitage))" ]] || sed -i '2i (sleep 20 && shutdown -r now "You used Armitage...") & ' /usr/bin/armitage
 bounce() {
   # bounce given interface
   if [ "$1" != "" ];then
