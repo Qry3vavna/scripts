@@ -8,7 +8,7 @@ main() {
 }
 
 initialize() {
-  version='v0.1 APR2015 ::Qry3v@vna~*'
+  version='v0.2 JUL2015 ::Qry3v@vna~*'
   src="/usr/share/metasploit-framework/modules/exploits" # Default location of Debian OS for msf exploits
   f_check source_folder $src
   verbose=0
@@ -68,7 +68,7 @@ f_check() {
 logic() {
   # Run the search...
   v_echo "[*] RPORTs found:"
-  find $(for mod in ${modules[*]};do echo -n "$src/$mod ";done) -type f -iname "*.rb" -exec sed -nr '/RPORT/s/.*\(([0-9]+)(\S*)\).*/\1/p' {} \; |sort -nu|tr '\n' ','|eval "sed 's/.$/$endchar/'"
+  find $(for mod in ${modules[*]};do echo -n "$src/$mod ";done) -type f -iname "*.rb" -exec sed -nr '/RPORT/s/.*\(([0-9]+)(\S*)\).*/\1/p' {} \; |sort -nu|tr '\n' ','|eval "sed 's/.$/$endchar/'"|sed -e 's/0,//;s/,65536//'
   # For each modules folder given...
   # Look through all ruby files, for lines with RPORT in them, then print out the numbers inbetween ().
   # Sort the list and select only unique entries, then translate newlines to commas and
