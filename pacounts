@@ -1,6 +1,6 @@
 #!/bin/bash
 # Packet Counter
-
+# https://github.com/Qry3vavna
 main() {
   initialize
   parse_args $@
@@ -8,7 +8,7 @@ main() {
 }
 
 initialize() {
-  version="0.1 pacount"
+  version="0.1.1 pacount"
   dev=eth0
 }
 
@@ -32,7 +32,7 @@ the_action() {
   IP=$(eval "ip -o -4 add|awk '/$dev/{split(\$4,a,\"/\"); print a[1]}'")
   case $ACTION in
     install) # Add new chains for counting packets
-      iptables -I INPUT 1 -s "$IP" -j ACCEPT 2>/dev/null
+      iptables -I INPUT 1 -d "$IP" -j ACCEPT 2>/dev/null
       iptables -I OUTPUT 1 -s "$IP" -j ACCEPT 2>/dev/null
     ;;
     print_count) # Stats please
