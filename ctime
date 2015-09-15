@@ -1,5 +1,5 @@
 #!/bin/bash 
-
+# https://github.com/Qry3vavna
 main() {
   initialize
   parse_args $@
@@ -54,6 +54,9 @@ usage() {
   cat << EOF
 
 $0 $version
+
+Modify ctime of file by changing system clock for a few milliseconds
+and forcing an update to the metadata of the file
 
 USAGE: $0 [OPTIONS] file
 
