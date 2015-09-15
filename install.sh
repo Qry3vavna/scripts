@@ -8,9 +8,11 @@ main() {
 }
 
 initialize() {
-  version="0.1 install"
+  version="0.2 install"
   list=(ctime hs pacounts poports rports)
-  manf=(rports.man)
+  manf=( $(find . -type f -name "*.man" -exec basename {} \; ) )
+  man_loc=$(locate -l1 bash.1.gz)
+  man_loc=$(echo ${man_loc%\/*})
   ACTION=
 }
 
@@ -20,7 +22,7 @@ parse_args() {
     case $1 in
       -i|-i*|--i*|I*|-I*|--I*|i*) ACTION=install;;
       -u|-u*|--u*|U*|-U*|--U*|u*) ACTION=uninstall;;
-      -h*|h*|H*|-H*|/?|--help|*) usage;exit;;
+      *) usage;exit;;
     esac
     shift
   done
@@ -40,10 +42,10 @@ the_action() {
   for manfile in ${manf[*]};do
     if [[ "$ACTION" == "install" ]];then
       mfile=${manfile%.*}
-      cp ./$manfile /usr/local/man/man1/${mfile}.1
-      gzip /usr/local/man/man1/${mfile}.1
+      cp $manfile "$man_loc/${mfile}.1"
+      gzip "$man_loc/${mfile}.1"
     else
-      rm /usr/local/man/man1/${mfile}.1
+      rm "$man_loc/${mfile}.1"
     fi
   done
 }
@@ -118,6 +120,8 @@ USAGE: $0 [OPTIONS] file
 
       -h|--help			This cruft
 
+# v0.2 :: updated man portion to auto-ish find the right place
+# v0.1 :: initial go at it
 EOF
 }
 
