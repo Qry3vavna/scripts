@@ -100,7 +100,7 @@ EXAMPLES:
     $0 -m windows
     Prints out a commas separated list of all the unique ports listed as RPORT in exploits/windows/*.rb
     
-    nmap -sS -p $($0 -m windows) -n 127.0.0.1 -oA home
+    nmap -sS -p \$($0 -m windows) -n 127.0.0.1 -oA home
     Integrate rports into nmap port selection by use of a subshell
 
 
