@@ -1,6 +1,6 @@
 #!/bin/bash
 # Print ports from metasploit modules
-
+# https://github.com/Qry3vavna
 main() {
   initialize
   parse_input $*
@@ -83,6 +83,7 @@ cat << EOF
 $version
 
 Tool to print out the RPORTs from each metasploit ruby exploit module selected
+Handy for integration with nmap
 
 USAGE: $0 <options>
 
@@ -98,6 +99,9 @@ OPTIONS:
 EXAMPLES:
     $0 -m windows
     Prints out a commas separated list of all the unique ports listed as RPORT in exploits/windows/*.rb
+    
+    nmap -sS -p $($0 -m windows) -n 127.0.0.1 -oA home
+    Integrate rports into nmap port selection by use of a subshell
 
 
 LICENSE:
