@@ -10,7 +10,9 @@ if [[ $(which zenmap) ]];then
   \n you should really use nmap\n from the command line instead" 2>/dev/null ; /usr/bin/zenmap'
 fi
 if [[ $(which armitage) ]];then
-  [[ "$(grep sleep $(which armitage))" ]] || sed -i '2i (sleep 20 && shutdown -r now "You used Armitage...") & ' /usr/bin/armitage
+  if [[ -e /usr/bin/armitage ]];then
+    [[ "$(grep sleep $(which armitage))" ]] || sed -i '2i (sleep 20 && shutdown -r now "You used Armitage...") & ' /usr/bin/armitage
+  fi
 fi  
 bounce() {
   # bounce given interface
@@ -76,5 +78,8 @@ scriptd() {
     startscriptd='. $fc'
     eval "$startscriptd"
   fi
-
+}
+hr() {
+  # print horizontal line the whole width of terminal. By default with '-'. USAGE: hr || hr \# || hr x
+  printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' "${1--}"
 }
