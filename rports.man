@@ -6,6 +6,7 @@ rports \- print list of rports from Metasploit modules
 .B rports [OPTIONS]
 .SH DESCRIPTION
 .B Tool to print out the RPORTs from each metasploit ruby exploit module selected
+.B Author: ::Qry3v@vna~* :: github.com/Qry3vavna
 .SH OPTIONS
 .IP "-l     --list"
 Prints out all the modules to select from
