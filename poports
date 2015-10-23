@@ -9,7 +9,7 @@ main() {
 }
 
 initialize() {
-    version='v0.1 SEP2014 ::Qry3v@vna~*'
+    version='v0.1 SEP2014 ::Qry3v@vna~* :: github.com/Qry3vavna'
     src="/usr/share/nmap/nmap-services" # Default location of Debian OS for nmap file
     f_check nmap-services $src
     verbose=0
