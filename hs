@@ -17,7 +17,7 @@ main() {
 
 initialize() {
   # Setup shop
-  version='0.9.8 OCTOBERFEST ::Qry3v@vna~*'
+  version='0.9.8 OCTOBERFEST ::Qry3v@vna~*  :: github.com/Qry3vavna'
   verbose=0
   identify=0
   color=1
