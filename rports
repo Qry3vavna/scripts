@@ -8,7 +8,7 @@ main() {
 }
 
 initialize() {
-  version='v0.2 JUL2015 ::Qry3v@vna~*'
+  version='v0.2 JUL2015 ::Qry3v@vna~* :: github.com/Qry3vavna'
   src="/usr/share/metasploit-framework/modules/exploits" # Default location of Debian OS for msf exploits
   f_check source_folder $src
   verbose=0
