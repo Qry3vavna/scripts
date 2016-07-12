@@ -8,8 +8,9 @@ main() {
 }
 
 initialize() {
-  version='v0.2 JUL2015 ::Qry3v@vna~* :: github.com/Qry3vavna'
-  src="/usr/share/metasploit-framework/modules/exploits" # Default location of Debian OS for msf exploits
+  version='v0.3 JUL2016 ::Qry3v@vna~* :: github.com/Qry3vavna'
+  #src="/usr/share/metasploit-framework/modules/exploits" # Default location of Debian OS for msf exploits
+  src="$(find / -type d -name 'exploits'|grep metasp|grep modu|grep -v test)"
   f_check source_folder $src
   verbose=0
   for dependency in find sed grep sort;do
