@@ -1,0 +1,278 @@
+#!/bin/bash
+# Script to show all possible meta-data aspects of a file
+
+main() {
+  initialize
+  parse_args $@
+  validate_file $this_file
+  fetch_meta
+}
+
+initialize() {
+  # Setup shop
+  author="Qry3vavna"
+  site="https://github.com/Qry3vavna"
+  version="0.2.0"
+  verbose=0
+  tools=(stat file lsattr getfacl)
+}
+
+parse_args() {
+  # Parse given arguments
+  while [ "$1" != "" ]; do
+    case $1 in
+      -h|--help) usage;exit;;
+      -l|--list) echo -e "$0 $version\nTools used to parse:\n${tools[@]}\n";
+          sed -n '/^_BEGI/,/^_END/{/_BEG/d;/_END/d;p;}' $0|awk -F: '{print $2,$3}';
+          exit 0;;
+      -v|--verbose) ((verbose+=1));;
+      -V|--vers*) echo "$(basename $0 2>/dev/null||echo $0) $version"; exit 0;;
+      -q|--q*) quick=1;echo "[+] Quick mode enabled";;
+      *) this_file="$1";;
+    esac
+    shift
+  done
+}
+
+validate_file() {
+  # Ensure file exists etc.
+  if [[ "${#@}" -gt 0 ]];then # You gave me a file
+    if [[ -r $@ ]];then # It's readable
+      if [[ -f $@ ]];then # A file, not a directory or socket or such
+        echo "[+] Parsing $@"
+      else
+        echo -e "\n[-] File not a file, perhaps a directory" # ERR3
+        usage; exit 3
+      fi
+    else
+      echo -e "\n[-] File unreadable" # ERR2
+      usage; exit 2
+    fi
+  else
+    echo -e "\n[-] No file given" # ERR1
+    usage; exit 1
+  fi
+}
+
+fetch_meta() {
+  # Gather the data by looping through each listed tool
+  for tool in ${tools[*]};do
+    echo "[*] fetch_$tool $this_file"
+    eval "fetch_${tool} $this_file"
+  done
+}
+
+fetch_stat() {
+  # Use the stat tool to get data
+  if [[ -e $(which stat) ]];then
+    if [[ -z $quick ]];then # Quick not selected?
+      while read -a opt;do
+        local t_var="${opt[0]##*%}" # Create tmp var with stat opt char
+        eval "stat_${t_var}=\"$(stat -c ${opt[0]} $@ 2>/dev/null)\""
+        #unset opt[0] # Remove opt letter from list
+        #eval "stat_${t_var}_des=\"${opt[@]}\"" # Grab opt description
+        #print_res "stat_${t_var}" "stat_${t_var}_des"
+        print_res "stat_${t_var}"
+      # Parse the output of stat's help to grab valid 'file' arguments and iterate
+      done < <(stat --help|sed -n '/^The val/,/^Valid/{/The val/d;/Valid/d;/^$/d;p;}')
+    else
+      stat $@ 2>/dev/null # Dudes want it quick, just run stat
+    fi
+  else
+    echo -e "\n[-] No 'stat' tool found."
+  fi
+}
+
+fetch_file() {
+  # Use the 'file' command's magic to determine file type
+  if [[ -e $(which file) ]];then
+    if [[ -z $quick ]];then # Quick not selected?
+      file_list=( full mime )
+      file_full="$(file -b $@ 2>/dev/null)"
+      file_mime="$(file -bi $@ 2>/dev/null)"
+      if [[ $(echo $file_mime|grep symlink) ]];then # Try to follow the link
+        file_sym="$(file -bL $@ 2>/dev/null)"
+        file_deref $@ # Unwind mutliple referenced links
+        file_list+=( sym ) # Add to print list
+      fi
+      if [[ $(echo $file_full|grep compress) ]];then # Try to decompress
+        file_zip="$(file -bz $@ 2>/dev/null)"
+        file_list+=( zip ) # Add to print list
+      fi
+      for var in ${file_list[@]};do # Iterate vars to print
+        print_res file_${var}
+      done
+    else
+      file -b $@ 2>/dev/null # Just run file already
+    fi
+  else
+    echo -e "\n[-] No 'file' tool found."
+  fi
+}
+
+file_deref() {
+  # Dererence file links
+  file_links+=( "$@" )
+  if [[ $(file -b $@|grep symbolic) ]];then
+    file_links+=( ">" ) # Found another layer deeper
+    file_deref $(file -b $@|awk '{print $NF}')
+  else
+    file_list+=(links) # Add links to print queue
+  fi
+}
+
+fetch_lsattr() {
+  # Grab extended attributes
+  if [[ -e $(which lsattr) ]];then
+    if [[ -z $quick ]];then # Quick not selected?
+      list_set="$(lsattr $@ 2>/dev/null|awk '{print $1}')"
+      for opt in $(echo $list_set|sed -e 's/\(.\)/\1\n/g');do
+        case $opt in # Loop through extended options set on file
+          a) list_a="[a] Only append mode";;
+          A) list_A="[A] No atime record";;
+          c) list_c="[c] Auto compressed on disk by kernel";;
+          C) list_C="[C] No copy-on-write wanted";;
+          d) list_d="[d] Not a candidate for backup with dump";;
+          D) list_D="[D] Directory files written synchronously aka dirsync";;
+          e) list_e="[e] File is using extents for mapping blocks on disk";;
+          E) list_E="[E] Experimental compression error";;
+          h) list_h="[h] File is storing its blocks in units of fs blocksize, size is or was >= 2TB";;
+          i) list_i="[i] File is immutable, can not be changed";;
+          I) list_I="[I] Directory indexed using hashed trees.";;
+          j) list_j="[j] Data written to file goes to journal first.";;
+          N) list_N="[N] File has data stored inline, within inode itself.";;
+          s) list_s="[s] When file is deleted, its blocks are zeroed and written back to disk";;
+          S) list_S="[S] File changes are written synchronously to disk";;
+          t) list_t="[t] File has no partial block fragment at the end when merged with other files.";;
+          T) list_T="[T] Top of directory hierarchies for Orlov block allocator.";;
+          u) list_u="[u] When file is deleted, contents are saved, allowing undeletion.";;
+          X) list_X="[X] Experimental patches indicate compressed raw contents can be accessed directly";;
+          Z) list_Z="[Z] Experimental patches indicate compressed file is dirty.";;
+        esac
+      done
+      for var in a A c C d D e E h i I j N s S t T u X Z;do
+        if [[ $(eval "echo \$list_${var}") ]];then
+          print_res list_${var}
+        fi
+      done
+    else
+      lsattr $@ 2>/dev/null # Just list attributes ok...
+    fi
+  else
+    echo -e "\n[-] No 'lsattr' tool found."
+  fi
+}
+
+fetch_getfacl() {
+  # File ACL options
+  if [[ -e $(which getfacl) ]];then
+    if [[ -z $quick ]];then # Quick not selected?
+      getfacl $@ 2>/dev/null #placeholder
+    else
+      getfacl $@ 2>/dev/null # Just get file Access Control List
+    fi
+  else
+    echo -e "\n[-] No 'getfacl' tool found."
+  fi
+}
+
+print_res() {
+  case $out in
+    *) print_list $@;;
+  esac
+}
+
+print_list() {
+  # Prints var & data from given variables in list format
+  k="$@"; v="${@}[@]"
+  echo -e "$k:\t${!v}"
+  if [[ "$verbose" -gt 0 ]];then
+    echo -en "description:\t" # Fetch description of given var name in _DATA_ section
+    sed -n '/^_BEGI/,/^_END/{/_BEG/d;/_END/d;p;}' $0|awk -F: '/'$k'/{print $3"\n"}'
+  fi # List dereferece: mywiki.wooledge.org/BashFAQ#Indirection
+}
+
+usage() {
+  # Print help
+  cat << EOF
+$(basename $0 2>/dev/null||echo $0) $version
+
+View all the possible meta-data on a given file
+Optionally select sections and print results
+$site
+
+USAGE: $(basename $0 2>/dev/null||echo $0) [OPTIONS] file
+
+      -h|--help		This cruft
+      -l|--list         List tools used to parse given file
+      -v|--verbose      Print more stuff
+      -V|--version      Print $0 version
+      -q|--quick        No parsing, just running
+                        Quickly runs all the tools it can without filtering or parsing
+
+EOF
+}
+
+<< EOD
+_BEGIN_DATA_
+# command : variable : description :
+lsattr:list_a:"Only append mode":
+lsattr:list_A:"No atime record":
+lsattr:list_c:"Auto compressed on disk by kernel":
+lsattr:list_C:"No copy-on-write wanted":
+lsattr:list_d:"Not a candidate for backup with dump":
+lsattr:list_D:"Directory files written synchronously aka dirsync":
+lsattr:list_e:"File is using extents for mapping blocks on disk":
+lsattr:list_E:"Experimental compression error":
+lsattr:list_h:"File is storing its blocks in units of fs blocksize, size is or was >= 2TB":
+lsattr:list_i:"File is immutable, can not be changed":
+lsattr:list_I:"Directory indexed using hashed trees.":
+lsattr:list_j:"Data written to file goes to journal first.":
+lsattr:list_N:"File has data stored inline, within inode itself.":
+lsattr:list_s:"When file is deleted, its blocks are zeroed and written back to disk":
+lsattr:list_S:"File changes are written synchronously to disk":
+lsattr:list_t:"File has no partial block fragment at the end when merged with other files.":
+lsattr:list_T:"Top of directory hierarchies for Orlov block allocator.":
+lsattr:list_u:"When file is deleted, contents are saved, allowing undeletion.":
+lsattr:list_X:"Experimental patches indicate compressed raw contents can be accessed directly":
+lsattr:list_Z:"Experimental patches indicate compressed file is dirty.":
+stat -c %a:stat_a:"access rights in octal (note '#' and '0' printf flags)":
+stat -c %A:stat_A:"access rights in human readable form":
+stat -c %b:stat_b:"number of blocks allocated (see %B)":
+stat -c %B:stat_B:"the size in bytes of each block reported by %b":
+stat -c %C:stat_C:"SELinux security context string":
+stat -c %d:stat_d:"device number in decimal":
+stat -c %D:stat_D:"device number in hex":
+stat -c %f:stat_f:"raw mode in hex":
+stat -c %F:stat_F:"file type":
+stat -c %g:stat_g:"group ID of owner":
+stat -c %G:stat_G:"group name of owner":
+stat -c %h:stat_h:"number of hard links":
+stat -c %i:stat_i:"inode number":
+stat -c %m:stat_m:"mount point":
+stat -c %n:stat_n:"file name":
+stat -c %N:stat_N:"quoted file name with dereference if symbolic link":
+stat -c %o:stat_o:"optimal I/O transfer size hint":
+stat -c %s:stat_s:"total size, in bytes":
+stat -c %t:stat_t:"major device type in hex, for character/block device special files":
+stat -c %T:stat_T:"minor device type in hex, for character/block device special files":
+stat -c %u:stat_u:"user ID of owner":
+stat -c %U:stat_U:"user name of owner":
+stat -c %w:stat_w:"time of file birth, human-readable; - if unknown":
+stat -c %W:stat_W:"time of file birth, seconds since Epoch; 0 if unknown":
+stat -c %x:stat_x:"time of last access, human-readable":
+stat -c %X:stat_X:"time of last access, seconds since Epoch":
+stat -c %y:stat_y:"time of last data modification, human-readable":
+stat -c %Y:stat_Y:"time of last data modification, seconds since Epoch":
+stat -c %z:stat_z:"time of last status change, human-readable":
+stat -c %Z:stat_Z:"time of last status change, seconds since Epoch":
+file -b:file_full:"Full descriptive text of file type":
+file -bi:file_mime:"MIME tag for file type":
+file -bL:file_sym:"File name to which given file is symbolicly linked":
+file -bz:file_zip:"Descriptive information on compression type":
+file_deref:file_links:"List of symbolic links":
+_END_DATA_
+EOD
+
+#=-+-=#
+main $@
