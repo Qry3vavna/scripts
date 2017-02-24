@@ -12,9 +12,10 @@ initialize() {
   # Setup shop
   author="Qry3vavna"
   site="https://github.com/Qry3vavna"
-  version="0.2.0"
+  version="0.3.0"
   verbose=0
   follow=
+  binary=
   tools=(stat file lsattr getfacl openssl hashdeep ssdeep)
 }
 
@@ -22,7 +23,8 @@ parse_args() {
   # Parse given arguments
   while [ "$1" != "" ]; do
     case $1 in
-      -a|--all) follow=1;; # Turn it all on (might take a while)
+      -a|--all) binary=1;follow=1;; # Turn it all on (might take a while)
+      -b|--binary) binary=1;; # Get header info on binary files
       -f|--follow) follow=1;; # Follow hardlinks
       -h|--help) usage;exit;; # Hilfe mich
       -l|--list) echo -e "$0 $version\nTools used to parse:\n${tools[@]}\n";
@@ -118,7 +120,14 @@ fetch_file() {
         print_res file_${var}
       done
     else
-      echo -e "File_Type: $(file -b $@ 2>/dev/null)" # Just run file already
+      file_full="$(file -b $@ 2>/dev/null)"
+      echo -e "File_Type: $file_full" # Just run file already
+    fi
+    if [[ "$(echo $file_full|grep ELF)" ]];then
+      if [[ -n "$binary" ]];then # Request more details on bin files
+        fetch_objdump $@
+        fetch_readelf $@
+      fi
     fi
   else
     echo -e "\n[-] No 'file' tool found."
@@ -133,6 +142,34 @@ file_deref() {
     file_deref $(file -b $@|awk '{print $NF}')
   else
     file_list+=(links) # Add links to print queue
+  fi
+}
+
+fetch_objdump() {
+  # Use 'objdump' to fetch binary header info
+  if [[ -e $(which objdump) ]];then
+    if [[ -z $quick ]];then # Quick not selected?
+      objdump -f $@ 2>/dev/null # Place holder
+    else
+      echo -en "objdump: "
+      objdump -f $@ 2>/dev/null
+    fi
+  else
+    echo -e "\n[-] No 'objdump' tool found."
+  fi
+}
+
+fetch_readelf() {
+  # Use 'readelf' to fetch binary header info
+  if [[ -e $(which file) ]];then
+    if [[ -z $quick ]];then # Quick not selected?
+      readelf -h $@ 2>/dev/null # Place holder
+    else
+      echo -en "readelf: "
+      readelf -h $@ 2>/dev/null
+    fi
+  else
+    echo -e "\n[-] No 'readelf' tool found."
   fi
 }
 
@@ -216,7 +253,7 @@ fetch_openssl() {
     for opt in md4 md5 ripemd160 sha sha1 sha224 sha256 sha384 sha512 whirlpool;do
       if [[ -z $quick ]];then # Quick not selected?
         # Run openssl digest select, awk parse type & hash, sed delete blanks & lowercase it
-        tmp_hash="$(openssl dgst -$opt $@|awk -F'[(=]' '{print "hash_"$1"="$3}'|sed 's/ //g;s/\(.*\)/\L\1/')"
+        tmp_hash="$(openssl dgst -$opt $@ 2>/dev/null|awk -F'[(=]' '{print "hash_"$1"="$3}'|sed 's/ //g;s/\(.*\)/\L\1/')"
         eval "$tmp_hash" # Sets vars hash_$hashtype
         print_res hash_$opt
       else # Just run & dump, sed delete blanks, lowercase, replace = with :
@@ -231,10 +268,15 @@ fetch_openssl() {
 fetch_hashdeep() {
   # If it's installed run given prog through ssdeep as well
   if [[ -e $(which hashdeep) ]];then
-    while IFS=, read hashdeep_size hashdeep_tiger hashdeep_file;do
-      print_res hashdeep_size
-      print_res hashdeep_tiger
-    done< <(hashdeep -sc tiger $@|tail -1)
+    if [[ -z $quick ]];then # Quick not selected?
+      while IFS=, read hashdeep_size hashdeep_tiger hashdeep_file;do
+        print_res hashdeep_size
+        print_res hashdeep_tiger
+      done< <(hashdeep -sc tiger $@ 2>/dev/null|tail -1)
+    else # Just run it
+      echo -en "hashdeep_tiger: "
+      hashdeep -sc tiger $@ 2>/dev/null|tail -1
+    fi
   else
     echo -e "\n[-] No hashdeep found"
   fi
@@ -243,11 +285,16 @@ fetch_hashdeep() {
 fetch_ssdeep() {
   # If it's installed run given prog through ssdeep as well
   if [[ -e $(which ssdeep) ]];then
-    while IFS=: read ssdeep_blocksize ssdeep_hash1 ssdeep_hash2 ;do
-      print_res ssdeep_blocksize
-      print_res ssdeep_hash1
-      print_res ssdeep_hash2
-    done< <(ssdeep -s $@|tail -1|cut -d, -f1)
+    if [[ -z $quick ]];then # Quick not selected?
+      while IFS=: read ssdeep_blocksize ssdeep_hash1 ssdeep_hash2 ;do
+        print_res ssdeep_blocksize
+        print_res ssdeep_hash1
+        print_res ssdeep_hash2
+      done< <(ssdeep -s $@ 2>/dev/null|tail -1|cut -d, -f1)
+    else # Just run it
+      echo -en "ssdeep: "
+      ssdeep -s $@ 2>/dev/null|tail -1
+    fi
   else
     echo -e "\n[-] No ssdeep found"
   fi
@@ -280,6 +327,9 @@ $site
 
 USAGE: $(basename $0 2>/dev/null||echo $0) [OPTIONS] file
 
+      -a|--all		Run all test, this could take a long time
+      -b|--binary	Get header information from binary files
+      -f|--follow	Follow hardlinks and find the other files (lengthy process)
       -h|--help		This cruft
       -l|--list         List tools used to parse given file
       -v|--verbose      Print more stuff
