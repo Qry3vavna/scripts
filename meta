@@ -28,7 +28,7 @@ parse_args() {
       -l|--list) echo -e "$0 $version\nTools used to parse:\n${tools[@]}\n";
           sed -n '/^_BEGI/,/^_END/{/_BEG/d;/_END/d;p;}' $0|awk -F: '{print $2,$3}';
           exit 0;;
-      -v|--verbose) ((verbose+=1));; # Not really used yet
+      -v|--verbose) ((verbose+=1));; # Off by default
       -V|--vers*) echo "$(basename $0 2>/dev/null||echo $0) $version"; exit 0;;
       -q|--q*) quick=1;; # Quiet & quick
       *) this_file="$1";;
@@ -42,7 +42,9 @@ validate_file() {
   if [[ "${#@}" -gt 0 ]];then # You gave me a file
     if [[ -r $@ ]];then # It's readable
       if [[ -f $@ ]];then # A file, not a directory or socket or such
-        echo "[+] Parsing $@"
+        if [[ "$verbose" -gt 0 ]];then
+          echo "[+] Parsing $@"
+        fi
       else
         echo -e "\n[-] File not a file, perhaps a directory" # ERR3
         usage; exit 3
@@ -60,7 +62,7 @@ validate_file() {
 fetch_meta() {
   # Gather the data by looping through each listed tool
   for tool in ${tools[*]};do
-    if [[ -z $quick ]];then # Quick not selected?
+    if [[ "$verbose" -gt 0 ]];then # Be more verbose
       echo "[*] fetch_$tool"
     fi
     eval "fetch_${tool} $this_file"
@@ -72,16 +74,20 @@ fetch_stat() {
   if [[ -e $(which stat) ]];then
     if [[ -z $quick ]];then # Quick not selected?
       while read -a opt;do
-        local t_var="${opt[0]##*%}" # Create tmp var with stat opt char
-        eval "stat_${t_var}=\"$(stat -c ${opt[0]} $@ 2>/dev/null)\""
-        print_res "stat_${t_var}"
+        local t_opt="-c ${opt[0]}"
+        local t_var=$(eval "awk -F: '/"${t_opt}"/{print \$2}'" $0) # Fetch var from _DATA_ below
+        eval "${t_var}=\"$(stat -c ${opt[0]} $@ 2>/dev/null)\""
+        print_res "${t_var}"
       # Parse the output of stat's help to grab valid 'file' arguments and iterate
       done < <(stat --help|sed -n '/^The val/,/^Valid/{/The val/d;/Valid/d;/^$/d;p;}')
-      if [[ "$stat_h" -gt 1 ]];then # more hardlinks, find them...
+      # Optionally follow hardlinks if requested
+      if [[ "$stat_hardlinks" -gt 1 ]];then # more hardlinks, find them...
         if [[ -n "$follow" ]];then # Not default, must be manually selected since it takes so long
-          echo -e "[*] Searching for hardlinked files, this might take a while..."
-          stat_hardlinks+=( $(find / -inum $stat_i -type f -exec realpath {} \; 2>/dev/null &  ) )
-          print_res stat_hardlinks
+          if [[ "$verbose" -gt 0 ]]; then
+            echo -e "[*] Searching for hardlinked files, this might take a while..."
+          fi
+          stat_hard_links+=( $(find / -inum $stat_inode -type f -exec realpath {} \; 2>/dev/null &  ) )
+          print_res stat_hard_links
         fi
       fi
     else
