@@ -22,7 +22,7 @@ parse_args() {
   # Parse given arguments
   while [ "$1" != "" ]; do
     case $1 in
-      -a|--all) binary=1;follow=1;; # Turn it all on (might take a while)
+      -a|--all) beta=1;binary=1;follow=1;; # Turn it all on (might take a while)
       -B|--beta) beta=1;; # Enable Beta functions
       -b|--binary) binary=1;; # Get header info on binary files
       -f|--follow) follow=1;; # Follow hardlinks
