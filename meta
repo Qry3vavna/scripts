@@ -14,18 +14,21 @@ initialize() {
   site="https://github.com/Qry3vavna"
   version="0.2.0"
   verbose=0
-  tools=(stat file lsattr getfacl filehash)
+  follow=
+  tools=(stat file lsattr getfacl openssl hashdeep ssdeep)
 }
 
 parse_args() {
   # Parse given arguments
   while [ "$1" != "" ]; do
     case $1 in
-      -h|--help) usage;exit;;
+      -a|--all) follow=1;; # Turn it all on (might take a while)
+      -f|--follow) follow=1;; # Follow hardlinks
+      -h|--help) usage;exit;; # Hilfe mich
       -l|--list) echo -e "$0 $version\nTools used to parse:\n${tools[@]}\n";
           sed -n '/^_BEGI/,/^_END/{/_BEG/d;/_END/d;p;}' $0|awk -F: '{print $2,$3}';
           exit 0;;
-      -v|--verbose) ((verbose+=1));;
+      -v|--verbose) ((verbose+=1));; # Not really used yet
       -V|--vers*) echo "$(basename $0 2>/dev/null||echo $0) $version"; exit 0;;
       -q|--q*) quick=1;; # Quiet & quick
       *) this_file="$1";;
@@ -58,7 +61,7 @@ fetch_meta() {
   # Gather the data by looping through each listed tool
   for tool in ${tools[*]};do
     if [[ -z $quick ]];then # Quick not selected?
-      echo "[*] fetch_$tool $this_file"
+      echo "[*] fetch_$tool"
     fi
     eval "fetch_${tool} $this_file"
   done
@@ -75,9 +78,11 @@ fetch_stat() {
       # Parse the output of stat's help to grab valid 'file' arguments and iterate
       done < <(stat --help|sed -n '/^The val/,/^Valid/{/The val/d;/Valid/d;/^$/d;p;}')
       if [[ "$stat_h" -gt 1 ]];then # more hardlinks, find them...
-         echo -e "[*] Searching for hardlinked files, this might take a while..."
-         stat_hardlinks+=( $(find / -inum $stat_i -type f -exec realpath {} \; 2>/dev/null &  ) )
-         print_res stat_hardlinks
+        if [[ -n "$follow" ]];then # Not default, must be manually selected since it takes so long
+          echo -e "[*] Searching for hardlinked files, this might take a while..."
+          stat_hardlinks+=( $(find / -inum $stat_i -type f -exec realpath {} \; 2>/dev/null &  ) )
+          print_res stat_hardlinks
+        fi
       fi
     else
       stat $@ 2>/dev/null # Dudes want it quick, just run stat
@@ -199,29 +204,47 @@ fetch_getfacl() {
   fi
 }
 
-fetch_filehash() {
-  # Creates a few different file hashes when possible
-  for hashtool in openssl;do
-    if [[ -e $(which $hashtool) ]];then # Tool exists, call it
-      fetch_hash_$hashtool $@
-    else
-      echo -e "\n[-] No $hashtool found"
-    fi
-  done
+fetch_openssl() {
+  # Run through the different message digest hashes in openssl
+  if [[ -e $(which openssl) ]];then
+    for opt in md4 md5 ripemd160 sha sha1 sha224 sha256 sha384 sha512 whirlpool;do
+      if [[ -z $quick ]];then # Quick not selected?
+        # Run openssl digest select, awk parse type & hash, sed delete blanks & lowercase it
+        tmp_hash="$(openssl dgst -$opt $@|awk -F'[(=]' '{print "hash_"$1"="$3}'|sed 's/ //g;s/\(.*\)/\L\1/')"
+        eval "$tmp_hash" # Sets vars hash_$hashtype
+        print_res hash_$opt
+      else # Just run & dump, sed delete blanks, lowercase, replace = with :
+        openssl dgst -$opt $@|awk -F'[(=]' '{print "hash_"$1"="$3}'|sed 's/ //g;s/\(.*\)/\L\1/;s/=/: /g'
+      fi
+    done
+  else
+    echo -e "\n[-] No openssl found"
+  fi
 }
 
-fetch_hash_openssl() {
-  # Run through the different message digest hashes in openssl
-  for opt in md4 md5 ripemd160 sha sha1 sha224 sha256 sha384 sha512 whirlpool;do
-    if [[ -z $quick ]];then # Quick not selected?
-      # Run openssl digest select, awk parse type & hash, sed delete blanks & lowercase it
-      tmp_hash="$(openssl dgst -$opt $@|awk -F'[(=]' '{print "hash_"$1"="$3}'|sed 's/ //g;s/\(.*\)/\L\1/')"
-      eval "$tmp_hash" # Sets vars hash_$hashtype
-      print_res hash_$opt
-    else # Just run & dump, sed delete blanks, lowercase, replace = with :
-      openssl dgst -$opt $@|awk -F'[(=]' '{print "hash_"$1"="$3}'|sed 's/ //g;s/\(.*\)/\L\1/;s/=/: /g'
-    fi
-  done
+fetch_hashdeep() {
+  # If it's installed run given prog through ssdeep as well
+  if [[ -e $(which hashdeep) ]];then
+    while IFS=, read hashdeep_size hashdeep_tiger hashdeep_file;do
+      print_res hashdeep_size
+      print_res hashdeep_tiger
+    done< <(hashdeep -sc tiger $@|tail -1)
+  else
+    echo -e "\n[-] No hashdeep found"
+  fi
+}
+
+fetch_ssdeep() {
+  # If it's installed run given prog through ssdeep as well
+  if [[ -e $(which ssdeep) ]];then
+    while IFS=: read ssdeep_blocksize ssdeep_hash1 ssdeep_hash2 ;do
+      print_res ssdeep_blocksize
+      print_res ssdeep_hash1
+      print_res ssdeep_hash2
+    done< <(ssdeep -s $@|tail -1|cut -d, -f1)
+  else
+    echo -e "\n[-] No ssdeep found"
+  fi
 }
 
 print_res() {
@@ -264,71 +287,76 @@ EOF
 << EOD
 _BEGIN_DATA_
 # command : variable : description : short_name :
-lsattr:list_a:"Only append mode"::
-lsattr:list_A:"No atime record"::
-lsattr:list_c:"Auto compressed on disk by kernel"::
-lsattr:list_C:"No copy-on-write wanted"::
-lsattr:list_d:"Not a candidate for backup with dump"::
-lsattr:list_D:"Directory files written synchronously aka dirsync"::
-lsattr:list_e:"File is using extents for mapping blocks on disk"::
-lsattr:list_E:"Experimental compression error"::
-lsattr:list_h:"File is storing its blocks in units of fs blocksize, size is or was >= 2TB"::
-lsattr:list_i:"File is immutable, can not be changed"::
-lsattr:list_I:"Directory indexed using hashed trees."::
-lsattr:list_j:"Data written to file goes to journal first."::
-lsattr:list_N:"File has data stored inline, within inode itself."::
-lsattr:list_s:"When file is deleted, its blocks are zeroed and written back to disk"::
-lsattr:list_S:"File changes are written synchronously to disk"::
-lsattr:list_t:"File has no partial block fragment at the end when merged with other files."::
-lsattr:list_T:"Top of directory hierarchies for Orlov block allocator."::
-lsattr:list_u:"When file is deleted, contents are saved, allowing undeletion."::
-lsattr:list_X:"Experimental patches indicate compressed raw contents can be accessed directly"::
-lsattr:list_Z:"Experimental patches indicate compressed file is dirty."::
-stat -c %a:stat_a:"access rights in octal (note '#' and '0' printf flags)"::
-stat -c %A:stat_A:"access rights in human readable form"::
-stat -c %b:stat_b:"number of blocks allocated (see %B)"::
-stat -c %B:stat_B:"the size in bytes of each block reported by %b"::
-stat -c %C:stat_C:"SELinux security context string"::
-stat -c %d:stat_d:"device number in decimal"::
-stat -c %D:stat_D:"device number in hex"::
-stat -c %f:stat_f:"raw mode in hex"::
-stat -c %F:stat_F:"file type"::
-stat -c %g:stat_g:"group ID of owner"::
-stat -c %G:stat_G:"group name of owner"::
-stat -c %h:stat_h:"number of hard links"::
-stat -c %i:stat_i:"inode number"::
-stat -c %m:stat_m:"mount point"::
-stat -c %n:stat_n:"file name"::
-stat -c %N:stat_N:"quoted file name with dereference if symbolic link"::
-stat -c %o:stat_o:"optimal I/O transfer size hint"::
-stat -c %s:stat_s:"total size, in bytes"::
-stat -c %t:stat_t:"major device type in hex, for character/block device special files"::
-stat -c %T:stat_T:"minor device type in hex, for character/block device special files"::
-stat -c %u:stat_u:"user ID of owner"::
-stat -c %U:stat_U:"user name of owner"::
-stat -c %w:stat_w:"time of file birth, human-readable; - if unknown"::
-stat -c %W:stat_W:"time of file birth, seconds since Epoch; 0 if unknown"::
-stat -c %x:stat_x:"time of last access, human-readable"::
-stat -c %X:stat_X:"time of last access, seconds since Epoch"::
-stat -c %y:stat_y:"time of last data modification, human-readable"::
-stat -c %Y:stat_Y:"time of last data modification, seconds since Epoch"::
-stat -c %z:stat_z:"time of last status change, human-readable"::
-stat -c %Z:stat_Z:"time of last status change, seconds since Epoch"::
-file -b:file_full:"Full descriptive text of file type"::
-file -bi:file_mime:"MIME tag for file type"::
-file -bL:file_sym:"File name to which given file is symbolicly linked"::
-file -bz:file_zip:"Descriptive information on compression type"::
-file_deref:file_links:"List of symbolic links"::
-openssl dgst -md4:hash_md4:MD4 message digest file hash::
-openssl dgst -md5:hash_md5:MD5 message digest file hash::
-openssl dgst -ripemd160:hash_ripemd160:RACE Integrity Primitives Evaluation Message Digest file hash::
-openssl dgst -sha:hash_sha:Secure Hash Algorithm file hash::
-openssl dgst -sha1:hash_sha1:Secure Hash Algorithm 160 bit file hash::
-openssl dgst -sha224:hash_sha224:Secure Hash Algorithm 224 bit file hash::
-openssl dgst -sha256:hash_sha256:Secure Hash Algorithm 256 bit file hash::
-openssl dgst -sha384:hash_sha384:Secure Hash Algorithm 384 bit file hash::
-openssl dgst -sha512:hash_sha512:Secure Hash Algorithm 512 bit file hash::
-openssl dgst -whirlpool:hash_whirlpool:Whirlpool 512 bit file hash::
+lsattr $@\|awk '$1~/a/{print $1}':list_append:"Only append mode"::
+lsattr $@\|awk '$1~/A/{print $1}':list_atime:"No atime record"::
+lsattr $@\|awk '$1~/c/{print $1}':list_autocom:"Auto compressed on disk by kernel"::
+lsattr $@\|awk '$1~/C/{print $1}':list_nocow:"No copy-on-write wanted"::
+lsattr $@\|awk '$1~/d/{print $1}':list_nodump:"Not a candidate for backup with dump"::
+lsattr $@\|awk '$1~/D/{print $1}':list_dirsync:"Directory files written synchronously aka dirsync"::
+lsattr $@\|awk '$1~/e/{print $1}':list_extents:"File is using extents for mapping blocks on disk"::
+lsattr $@\|awk '$1~/E/{print $1}':list_experror:"Experimental compression error"::
+lsattr $@\|awk '$1~/h/{print $1}':list_largefs:"File is storing its blocks in units of fs blocksize, size is or was >= 2TB"::
+lsattr $@\|awk '$1~/i/{print $1}':list_immutable:"File is immutable, can not be changed"::
+lsattr $@\|awk '$1~/I/{print $1}':list_hashtree:"Directory indexed using hashed trees."::
+lsattr $@\|awk '$1~/j/{print $1}':list_journal:"Data written to file goes to journal first."::
+lsattr $@\|awk '$1~/N/{print $1}':list_inline:"File has data stored inline, within inode itself."::
+lsattr $@\|awk '$1~/s/{print $1}':list_zeroed:"When file is deleted, its blocks are zeroed and written back to disk"::
+lsattr $@\|awk '$1~/S/{print $1}':list_syncchange:"File changes are written synchronously to disk"::
+lsattr $@\|awk '$1~/t/{print $1}':list_nofrag:"File has no partial block fragment at the end when merged with other files."::
+lsattr $@\|awk '$1~/T/{print $1}':list_topdog:"Top of directory hierarchies for Orlov block allocator."::
+lsattr $@\|awk '$1~/u/{print $1}':list_undelete:"When file is deleted, contents are saved, allowing undeletion."::
+lsattr $@\|awk '$1~/X/{print $1}':list_rawbyte:"Experimental patches indicate compressed raw contents can be accessed directly"::
+lsattr $@\|awk '$1~/Z/{print $1}':list_dirty:"Experimental patches indicate compressed file is dirty."::
+stat -c %a $@:stat_mode_octal:"access rights in octal (note '#' and '0' printf flags)"::
+stat -c %A $@:stat_no_atime:"access rights in human readable form"::
+stat -c %b $@:stat_block_num:"number of blocks allocated (see %B)"::
+stat -c %B $@:stat_block_size:"the size in bytes of each block reported by %b"::
+stat -c %C $@:stat_selinux:"SELinux security context string"::
+stat -c %d $@:stat_dev_dec:"device number in decimal"::
+stat -c %D $@:stat_dev_hex:"device number in hex"::
+stat -c %f $@:stat_mode_raw:"raw mode in hex"::
+stat -c %F $@:stat_file_type:"file type"::
+stat -c %g $@:stat_group_id:"group ID of owner"::
+stat -c %G $@:stat_group_name:"group name of owner"::
+stat -c %h $@:stat_hardlinks:"number of hard links"::
+stat -c %i $@:stat_inode:"inode number"::
+stat -c %m $@:stat_mount_point:"mount point"::
+stat -c %n $@:stat_file_name:"file name"::
+stat -c %N $@:stat_sym_link:"quoted file name with dereference if symbolic link"::
+stat -c %o $@:stat_iotx_size:"optimal I/O transfer size hint"::
+stat -c %s $@:stat_size_bytes:"total size, in bytes"::
+stat -c %t $@:stat_dev_maj:"major device type in hex, for character/block device special files"::
+stat -c %T $@:stat_dev_min:"minor device type in hex, for character/block device special files"::
+stat -c %u $@:stat_user_id:"user ID of owner"::
+stat -c %U $@:stat_user_name:"user name of owner"::
+stat -c %w $@:stat_btime_human:"time of file birth, human-readable; - if unknown"::
+stat -c %W $@:stat_btime_epoch:"time of file birth, seconds since Epoch; 0 if unknown"::
+stat -c %x $@:stat_atime_human:"time of last access, human-readable"::
+stat -c %X $@:stat_atime_epoch:"time of last access, seconds since Epoch"::
+stat -c %y $@:stat_mtime_human:"time of last data modification, human-readable"::
+stat -c %Y $@:stat_mtime_epoch:"time of last data modification, seconds since Epoch"::
+stat -c %z $@:stat_ctime_human:"time of last status change, human-readable"::
+stat -c %Z $@:stat_ctime_epoch:"time of last status change, seconds since Epoch"::
+file -b $@:file_full:"Full descriptive text of file type"::
+file -bi $@:file_mime:"MIME tag for file type"::
+file -bL $@:file_sym:"File name to which given file is symbolicly linked"::
+file -bz $@:file_zip:"Descriptive information on compression type"::
+file_deref $@:file_links:"List of symbolic links"::
+openssl dgst -md4 $@:hash_md4:MD4 message digest file hash::
+openssl dgst -md5 $@:hash_md5:MD5 message digest file hash::
+openssl dgst -ripemd160 $@:hash_ripemd160:RACE Integrity Primitives Evaluation Message Digest file hash::
+openssl dgst -sha $@:hash_sha:Secure Hash Algorithm file hash::
+openssl dgst -sha1 $@:hash_sha1:Secure Hash Algorithm 160 bit file hash::
+openssl dgst -sha224 $@:hash_sha224:Secure Hash Algorithm 224 bit file hash::
+openssl dgst -sha256 $@:hash_sha256:Secure Hash Algorithm 256 bit file hash::
+openssl dgst -sha384 $@:hash_sha384:Secure Hash Algorithm 384 bit file hash::
+openssl dgst -sha512 $@:hash_sha512:Secure Hash Algorithm 512 bit file hash::
+openssl dgst -whirlpool $@:hash_whirlpool:Whirlpool 512 bit file hash::
+hashdeep -sc tiger $@\|tail -1\|cut -d, -f1:hashdeep_size:Hashdeep file size::
+hashdeep -sc tiger $@\|tail -1\|cut -d, -f2:hashdeep_tiger:Hashdeep Tiger Hash Algorithm::
+ssdeep -s $@\|tail -1\|cut -d, -f1:ssdeep_blocksize:ssdeep blocksize::
+ssdeep -s $@\|tail -1\|cut -d, -f1:ssdeep_hash1:ssdeep first hash::
+ssdeep -s $@\|tail -1\|cut -d, -f1:ssdeep_hash2:ssdeep second hash::
 _END_DATA_
 EOD
 
