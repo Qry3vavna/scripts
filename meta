@@ -12,7 +12,7 @@ initialize() {
   # Setup shop
   author="Qry3vavna"
   site="https://github.com/Qry3vavna"
-  version="0.3.0"
+  version="0.3.1"
   verbose=0
   follow=
   binary=
@@ -42,17 +42,15 @@ parse_args() {
 validate_file() {
   # Ensure file exists etc.
   if [[ "${#@}" -gt 0 ]];then # You gave me a file
-    if [[ -r $@ ]];then # It's readable
-      if [[ -f $@ ]];then # A file, not a directory or socket or such
-        if [[ "$verbose" -gt 0 ]];then
-          echo "[+] Parsing $@"
-        fi
+    if [[ -f $@ ]];then # A file, not a directory or socket or such
+      if [[ -r $@ ]];then # It's readable
+        v_echo "[+] Parsing $@"
       else
-        echo -e "\n[-] File not a file, perhaps a directory" # ERR3
+        echo -e "\n[-] File unreadable, check permissions" # ERR3
         usage; exit 3
       fi
     else
-      echo -e "\n[-] File unreadable" # ERR2
+      echo -e "\n[-] File does not exist, or perhaps a directory or other type" # ERR2
       usage; exit 2
     fi
   else
@@ -64,9 +62,7 @@ validate_file() {
 fetch_meta() {
   # Gather the data by looping through each listed tool
   for tool in ${tools[*]};do
-    if [[ "$verbose" -gt 0 ]];then # Be more verbose
-      echo "[*] fetch_$tool"
-    fi
+    v_echo "[*] fetch_$tool"
     eval "fetch_${tool} $this_file"
   done
 }
@@ -85,18 +81,18 @@ fetch_stat() {
       # Optionally follow hardlinks if requested
       if [[ "$stat_hardlinks" -gt 1 ]];then # more hardlinks, find them...
         if [[ -n "$follow" ]];then # Not default, must be manually selected since it takes so long
-          if [[ "$verbose" -gt 0 ]]; then
-            echo -e "[*] Searching for hardlinked files, this might take a while..."
-          fi
+          v_echo "[*] Searching for hardlinked files, this might take a while..."
           stat_hard_links+=( $(find / -inum $stat_inode -type f -exec realpath {} \; 2>/dev/null &  ) )
           print_res stat_hard_links
+        else
+          v_echo "[!] $stat_hardlinks hardlinks found. To discover, use '-f' or '-a' options."
         fi
       fi
     else
       stat $@ 2>/dev/null # Dudes want it quick, just run stat
     fi
   else
-    echo -e "\n[-] No 'stat' tool found."
+    v_echo "\n[-] No 'stat' tool found."
   fi
 }
 
@@ -130,7 +126,7 @@ fetch_file() {
       fi
     fi
   else
-    echo -e "\n[-] No 'file' tool found."
+    v_echo "\n[-] No 'file' tool found."
   fi
 }
 
@@ -155,7 +151,7 @@ fetch_objdump() {
       objdump -f $@ 2>/dev/null
     fi
   else
-    echo -e "\n[-] No 'objdump' tool found."
+    v_echo "\n[-] No 'objdump' tool found."
   fi
 }
 
@@ -169,7 +165,7 @@ fetch_readelf() {
       readelf -h $@ 2>/dev/null
     fi
   else
-    echo -e "\n[-] No 'readelf' tool found."
+    v_echo "\n[-] No 'readelf' tool found."
   fi
 }
 
@@ -230,7 +226,7 @@ fetch_lsattr() {
       echo -e "Ext_Attributes: $(lsattr $@ 2>/dev/null|awk '{print $1}')" # Just list attributes ok...
     fi
   else
-    echo -e "\n[-] No 'lsattr' tool found."
+    v_echo "\n[-] No 'lsattr' tool found."
   fi
 }
 
@@ -243,7 +239,7 @@ fetch_getfacl() {
       getfacl -c -s $@ 2>/dev/null|sed '/^$/d' # Just get file Access Control List
     fi
   else
-    echo -e "\n[-] No 'getfacl' tool found."
+    v_echo "\n[-] No 'getfacl' tool found."
   fi
 }
 
@@ -261,7 +257,7 @@ fetch_openssl() {
       fi
     done
   else
-    echo -e "\n[-] No openssl found"
+    v_echo "\n[-] No openssl found"
   fi
 }
 
@@ -278,7 +274,7 @@ fetch_hashdeep() {
       hashdeep -sc tiger $@ 2>/dev/null|tail -1
     fi
   else
-    echo -e "\n[-] No hashdeep found"
+    v_echo "\n[-] No hashdeep found"
   fi
 }
 
@@ -296,7 +292,7 @@ fetch_ssdeep() {
       ssdeep -s $@ 2>/dev/null|tail -1
     fi
   else
-    echo -e "\n[-] No ssdeep found"
+    v_echo "\n[-] No ssdeep found"
   fi
 }
 
@@ -314,6 +310,13 @@ print_list() {
     echo -en "description:\t" # Fetch description of given var name in _DATA_ section
     sed -n '/^_BEGI/,/^_END/{/_BEG/d;/_END/d;p;}' $0|awk -F: '/'$k'/{print $3"\n"}'
   fi # List dereferece: mywiki.wooledge.org/BashFAQ#Indirection
+}
+
+v_echo (){
+  # Verbose echo, does the checking for you
+  if [[ "$verbose" -gt 0 ]];then
+    echo -e "$@"
+  fi
 }
 
 usage() {
