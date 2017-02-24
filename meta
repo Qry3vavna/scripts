@@ -14,8 +14,7 @@ initialize() {
   site="https://github.com/Qry3vavna"
   version="0.3.1"
   verbose=0
-  follow=
-  binary=
+  follow= ;binary= ;beta=
   tools=(stat file lsattr getfacl openssl hashdeep ssdeep)
 }
 
@@ -24,6 +23,7 @@ parse_args() {
   while [ "$1" != "" ]; do
     case $1 in
       -a|--all) binary=1;follow=1;; # Turn it all on (might take a while)
+      -B|--beta) beta=1;; # Get header info on binary files
       -b|--binary) binary=1;; # Get header info on binary files
       -f|--follow) follow=1;; # Follow hardlinks
       -h|--help) usage;exit;; # Hilfe mich
@@ -143,6 +143,7 @@ file_deref() {
 
 fetch_objdump() {
   # Use 'objdump' to fetch binary header info
+  [[ -n "$beta" ]]||return # Temporary beta check until function fleshed out
   if [[ -e $(which objdump) ]];then
     if [[ -z $quick ]];then # Quick not selected?
       objdump -f $@ 2>/dev/null # Place holder
@@ -157,6 +158,7 @@ fetch_objdump() {
 
 fetch_readelf() {
   # Use 'readelf' to fetch binary header info
+  [[ -n "$beta" ]]||return # Temporary beta check until function fleshed out
   if [[ -e $(which file) ]];then
     if [[ -z $quick ]];then # Quick not selected?
       readelf -h $@ 2>/dev/null # Place holder
@@ -231,7 +233,8 @@ fetch_lsattr() {
 }
 
 fetch_getfacl() {
-  # File ACL options
+  # Extended File ACL options
+  [[ -n "$beta" ]]||return # Temporary beta check until function fleshed out
   if [[ -e $(which getfacl) ]];then
     if [[ -z $quick ]];then # Quick not selected?
       getfacl -c -s $@ 2>/dev/null|sed '/^$/d' #placeholder
@@ -331,6 +334,7 @@ $site
 USAGE: $(basename $0 2>/dev/null||echo $0) [OPTIONS] file
 
       -a|--all		Run all test, this could take a long time
+      -B|--beta		Also run beta functions which do not parse properly yet
       -b|--binary	Get header information from binary files
       -f|--follow	Follow hardlinks and find the other files (lengthy process)
       -h|--help		This cruft
