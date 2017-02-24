@@ -129,35 +129,54 @@ fetch_lsattr() {
   # Grab extended attributes
   if [[ -e $(which lsattr) ]];then
     if [[ -z $quick ]];then # Quick not selected?
+      list_print=("")
       list_set="$(lsattr $@ 2>/dev/null|awk '{print $1}')"
       for opt in $(echo $list_set|sed -e 's/\(.\)/\1\n/g');do
         case $opt in # Loop through extended options set on file
-          a) list_a="[a] Only append mode";;
-          A) list_A="[A] No atime record";;
-          c) list_c="[c] Auto compressed on disk by kernel";;
-          C) list_C="[C] No copy-on-write wanted";;
-          d) list_d="[d] Not a candidate for backup with dump";;
-          D) list_D="[D] Directory files written synchronously aka dirsync";;
-          e) list_e="[e] File is using extents for mapping blocks on disk";;
-          E) list_E="[E] Experimental compression error";;
-          h) list_h="[h] File is storing its blocks in units of fs blocksize, size is or was >= 2TB";;
-          i) list_i="[i] File is immutable, can not be changed";;
-          I) list_I="[I] Directory indexed using hashed trees.";;
-          j) list_j="[j] Data written to file goes to journal first.";;
-          N) list_N="[N] File has data stored inline, within inode itself.";;
-          s) list_s="[s] When file is deleted, its blocks are zeroed and written back to disk";;
-          S) list_S="[S] File changes are written synchronously to disk";;
-          t) list_t="[t] File has no partial block fragment at the end when merged with other files.";;
-          T) list_T="[T] Top of directory hierarchies for Orlov block allocator.";;
-          u) list_u="[u] When file is deleted, contents are saved, allowing undeletion.";;
-          X) list_X="[X] Experimental patches indicate compressed raw contents can be accessed directly";;
-          Z) list_Z="[Z] Experimental patches indicate compressed file is dirty.";;
+          a) list_append="[a] Only append mode"
+                list_print+=("append");;
+          A) list_atime="[A] No atime record"
+                list_print+=("atime");;
+          c) list_autocom="[c] Auto compressed on disk by kernel"
+                list_print+=("autocom");;
+          C) list_nocow="[C] No copy-on-write wanted"
+                list_print+=("nocow");;
+          d) list_nodump="[d] Not a candidate for backup with dump"
+                list_print+=("nodump");;
+          D) list_dirsync="[D] Directory files written synchronously aka dirsync"
+                list_print+=("dirsync");;
+          e) list_extents="[e] File is using extents for mapping blocks on disk (normal)"
+                list_print+=("extents");;
+          E) list_experror="[E] Experimental compression error"
+                list_print+=("experror");;
+          h) list_largefs="[h] File is storing its blocks in units of fs blocksize, size is or was >= 2TB"
+                list_print+=("largefs");;
+          i) list_immutable="[i] File is immutable, can not be changed"
+                list_print+=("immutable");;
+          I) list_hashtree="[I] Directory indexed using hashed trees."
+                list_print+=("hashtree");;
+          j) list_journal="[j] Data written to file goes to journal first."
+                list_print+=("journal");;
+          N) list_inline="[N] File has data stored inline, within inode itself."
+                list_print+=("inline");;
+          s) list_zeroed="[s] When file is deleted, its blocks are zeroed and written back to disk"
+                list_print+=("zeroed");;
+          S) list_syncchange="[S] File changes are written synchronously to disk"
+                list_print+=("syncchange");;
+          t) list_nofrag="[t] File has no partial block fragment at the end when merged with other files."
+                list_print+=("nofrag");;
+          T) list_topdog="[T] Top of directory hierarchies for Orlov block allocator."
+                list_print+=("topdog");;
+          u) list_undelete="[u] When file is deleted, contents are saved, allowing undeletion."
+                list_print+=("undelete");;
+          X) list_rawbyte="[X] Experimental patches indicate compressed raw contents can be accessed directly"
+                list_print+=("rawbyte");;
+          Z) list_dirty="[Z] Experimental patches indicate compressed file is dirty."
+                list_print+=("dirty");;
         esac
       done
-      for var in a A c C d D e E h i I j N s S t T u X Z;do
-        if [[ $(eval "echo \$list_${var}") ]];then
-          print_res list_${var}
-        fi
+      for var in ${list_print[@]};do # Iterate vars to print
+        print_res list_${var}
       done
     else
       echo -e "Ext_Attributes: $(lsattr $@ 2>/dev/null|awk '{print $1}')" # Just list attributes ok...
