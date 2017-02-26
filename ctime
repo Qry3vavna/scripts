@@ -53,12 +53,12 @@ ctime_it() {
 usage() {
   cat << EOF
 
-$0 $version
+$(basename $0 2>/dev/null||echo $0) $version
 
 Modify ctime of file by changing system clock for a few milliseconds
 and forcing an update to the metadata of the file
 
-USAGE: $0 [OPTIONS] file
+USAGE: $(basename $0 2>/dev/null||echo $0) [OPTIONS] file
 
       -c|--ctime  <DATE>	Set the time to a custom date
 				See the 'date' command for an example
