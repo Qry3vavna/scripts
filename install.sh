@@ -73,10 +73,10 @@ vimrc_check() {
 # Check for vimrc and replace if necessary
   if [[ -e ~/.vimrc ]];then # it already exists
     if [[ $(grep -i qry3 ~/.vimrc) ]];then # we're there
-      if [[ "$(sha1sum ~/.vimrc|cut -d' ' -f1)" != "$(sha1sum .vimrc|cut -d' ' -f1)" ]];then # not our v0.1 copy :(
+      if [[ "$(sha1sum ~/.vimrc|cut -d' ' -f1)" != "$(sha1sum vimrc|cut -d' ' -f1)" ]];then # not our v0.1 copy :(
         if [[ "$ACTION" == "install" ]];then
           cp ~/.vimrc{,.script} # Archive current
-          cp ./.vimrc ~/.vimrc
+          cp ./vimrc ~/.vimrc
           chmod 600 ~/.vimrc
         else # uninstall
           if [[ -e ~/.vimrc.script ]];then
@@ -94,12 +94,12 @@ vimrc_check() {
       fi
     else # exists, we're not in there
       if [[ "$ACTION" == "install" ]];then
-        cat ./.vimrc >> ~/.vimrc
+        cat ./vimrc >> ~/.vimrc
       fi
     fi
   else # doesn't even exist
     if [[ "$ACTION" == "install" ]];then
-      cp ./.vimrc ~/.vimrc
+      cp ./vimrc ~/.vimrc
       chmod 600 ~/.vimrc
     fi
   fi
@@ -120,6 +120,7 @@ USAGE: $0 [OPTIONS] file
 
       -h|--help			This cruft
 
+# v0.3 :: updated vimrc section
 # v0.2 :: updated man portion to auto-ish find the right place
 # v0.1 :: initial go at it
 EOF
