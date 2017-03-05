@@ -1,5 +1,6 @@
 # Part of github/Qry3vavna/
-#
+# version 0.2.1
+
 alias l='ls -al'
 alias lf='ls -alF'
 alias nohist='unset HISTFILE HISTSIZE HISTFILESIZE'
@@ -127,6 +128,11 @@ get() {
 update() {
   # update and upgrade the system
   eval "$this_update && $this_upgrade"
+}
+
+have() {
+  # quick check to see if the given tool is installed
+  eval "$this_has"
 }
 
 #=----+----=#
