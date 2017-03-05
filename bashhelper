@@ -1,0 +1,133 @@
+# Part of github/Qry3vavna/
+#
+alias l='ls -al'
+alias lf='ls -alF'
+alias nohist='unset HISTFILE HISTSIZE HISTFILESIZE'
+alias install=get
+
+filew() {
+  # run file against any tool in the $PATH directory by name
+  file $(which $@) 2>/dev/null
+}
+
+metaw() {
+  # run meta script against any tool in the $PATH directory by name
+  meta $(which $@) 2>/dev/null
+}
+
+bounce() {
+  # bounce given interface
+  if [ "$1" != "" ];then
+    ifdown $1 && ifup $1
+  fi
+}
+
+p() {
+  # search through ps
+  terms="${*--}"
+  q="grep -v grep"
+  for t in ${terms[*]};do
+    q="$q|grep -i -- $t"
+  done
+  eval "ps -ef|$q"
+  terms=; t=; q=
+}
+
+hr() {
+  # print horizontal line the whole width of terminal. By default with '-'. USAGE: hr || hr \# || hr x
+  printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' "${1--}"
+}
+
+detect_pacman() {
+  # Detect the package manager installed
+  if [[ -e ~/.config/bashhelper.conf ]];then
+    pm="$(grep pm ~/.config/bashhelper.conf|cut -d= -f2)"
+    set_pm $pm
+  else
+    for pm in apt apt-get yum dnf pacman emerge;do
+      if [[ -x $(which ${pm}) ]];then
+        set_pm $pm
+        break
+      fi
+    done
+  fi
+}
+
+set_pm() {
+  # Set the variables needed to run shortcuts
+  local pm="$@"
+  if [[ -x $(which $pm) ]];then # Package manage exists and is executable
+    case ${pm} in
+      apt)    this_has="apt list -a --installed \"*\${@}*\""
+              this_show="apt show \${@};dpkg -L \${@}"
+              this_search="apt search"
+              this_remove="apt remove \${@}"
+              this_update="apt update"
+              this_upgrade="apt upgrade"
+              this_install="apt intall \${@}"
+        ;;
+      apt-get)this_has="dpkg -l \${@}"
+              this_show="dpkg -L \${@}"
+              this_search="apt-cache search"
+              this_remove="apt-get remove \${@}"
+              this_update="apt-get update -y"
+              this_upgrade="apt-get upgrade -y"
+              this_install="apt-get install -y \${@}"
+        ;;
+      yum)    this_has="rpm -q \${@}"
+              this_show="rpm -ql \${@}"
+              this_search="yum search"
+              this_remove="yum remove \${@}"
+              this_update="yum update"
+              this_upgrade="yum upgrade"
+              this_install="yum install -y \${@}"
+        ;;
+      dnf)    this_has="dnf list --installed \${@}"
+              this_show="dnf info \${@}"
+              this_search="dnf search"
+              this_remove="dnf erase \${@}"
+              this_update="dnf update"
+              this_upgrade="dnf upgrade --refresh"
+              this_install="dnf install -y \${@}"
+        ;;
+    esac
+  fi
+}
+
+show() {
+  # show / search tools installed
+  if [ "$1" != "" ];then
+    eval "$this_show" 2>/dev/null
+    [[ $? -gt 0 ]] && echo $@ not found or installed
+  fi
+}
+
+search() {
+  # search for tools not yet installed
+  if [ "$1" != "" ];then
+    term="$1"
+    shift
+    terms="${*--}"
+    for t in ${terms[*]};do
+      q="$q|grep -i -- $t"
+    done
+    eval "$this_search $term $q 2>/dev/null|sort"
+    terms=; term=; t=; q=
+  fi
+}
+
+get() {
+  # install the given tool
+  if [ "$1" != "" ];then
+   echo "Installing: $@"
+   eval "$this_install"
+  fi
+}
+
+update() {
+  # update and upgrade the system
+  eval "$this_update && $this_upgrade"
+}
+
+#=----+----=#
+detect_pacman
