@@ -44,7 +44,7 @@ detect_pacman() {
     pm="$(grep pm ~/.config/bashhelper.conf|cut -d= -f2)"
     set_pm $pm
   else
-    for pm in apt apt-get yum dnf pacman emerge;do
+    for pm in apt-get apt yum dnf pacman emerge;do
       if [[ -x $(which ${pm}) ]];then
         set_pm $pm
         break
