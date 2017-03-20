@@ -1,0 +1,23 @@
+# Bash autocomplete script
+# copy to /etc/bash_completion.d/rports
+
+_rports() {
+  local cur prev modules helps
+  COMPREPLY=()
+  cur=$(_get_cword)
+  prev=$(_get_pword)
+  modules="$(rports -l)"
+  helps="-h -l -m -n -v -V"
+  case $prev in
+    -m|--modules)
+        COMPREPLY=( $( compgen -W "$modules" -- "$cur" ) )
+        return 0
+        ;;
+  esac
+
+  COMPREPLY=()
+  if [[ "$COMP_CWORD" = 1 ]];then
+    COMPREPLY=( $(compgen -W "$helps" -- $2 ) )
+  fi
+}
+complete -F _rports rports
