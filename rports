@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash 
 # Print ports from metasploit modules
 # https://github.com/Qry3vavna
 main() {
@@ -8,9 +8,19 @@ main() {
 }
 
 initialize() {
-  version='v0.3 JUL2016 ::Qry3v@vna~* :: github.com/Qry3vavna'
+  version='v0.4.0 MAR2017 ::Qry3v@vna~* :: github.com/Qry3vavna'
   #src="/usr/share/metasploit-framework/modules/exploits" # Default location of Debian OS for msf exploits
-  src="$(find / -type d -name 'exploits'|grep metasp|grep modu|grep -v test)"
+  # Looks for smb_version.smb and traces back path to detect full exploits path! :)
+  src=( $(locate smb_version.rb|tr '/' ' ') )
+  new=( )
+  for x in $(seq 0 ${#src[*]});do
+    if [[ "${src[$x]}" != "auxiliary" ]];then
+      new+=( ${src[$x]} )
+    else
+      break
+    fi
+    src="/$(echo ${new[*]}|tr ' ' '/')/exploits"
+  done
   f_check source_folder $src
   verbose=0
   for dependency in find sed grep sort;do
@@ -35,7 +45,7 @@ parse_input() {
       ;;
       -l*|--l*)
         v_echo "[*] module folder selected: $2"
-        ls -F $src 2>/dev/null
+        ls -A $src 2>/dev/null
         exit 0
       ;;
       -v|--v|--verb*|-verb*)
