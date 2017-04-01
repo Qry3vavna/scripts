@@ -12,7 +12,7 @@ initialize() {
   # Setup shop
   author="Qry3vavna"
   site="https://github.com/Qry3vavna"
-  version="0.3.2"
+  version="0.4.1"
   verbose=0
   follow= ;binary= ;beta=
   tools=(stat file lsattr getfacl openssl hashdeep ssdeep)
@@ -71,7 +71,7 @@ fetch_meta() {
 
 fetch_stat() {
   # Use the stat tool to get data
-  if [[ -e $(which stat) ]];then
+  if [[ $(which stat) ]];then
     if [[ -z $quick ]];then # Quick not selected?
       while read -a opt;do
         local t_opt="-c ${opt[0]}"
@@ -100,7 +100,7 @@ fetch_stat() {
 
 fetch_file() {
   # Use the 'file' command's magic to determine file type
-  if [[ -e $(which file) ]];then
+  if [[ $(which file) ]];then
     if [[ -z $quick ]];then # Quick not selected?
       file_list=( full mime )
       file_full="$(file -b $@ 2>/dev/null)"
@@ -146,6 +146,7 @@ file_deref() {
 
 file_follow() {
   # Follow link path with namei if installed
+  [[ -n "$beta" ]]||return # Temporary beta check until function fleshed out
   if [[ $(which namei) ]];then
     file_namei="$(namei $@ 2>/dev/null)"
     file_list+=(namei) # Add namei to print queue
@@ -154,7 +155,6 @@ file_follow() {
 
 fetch_objdump() {
   # Use 'objdump' to fetch binary header info
-  [[ -n "$beta" ]]||return # Temporary beta check until function fleshed out
   if [[ $(which objdump) ]];then
     if [[ -z $quick ]];then # Quick not selected? sed rocks
       objdump -f $@ 2>/dev/null|sed -e '/^$/d
@@ -175,7 +175,6 @@ fetch_objdump() {
 
 fetch_readelf() {
   # Use 'readelf' to fetch binary header info
-  [[ -n "$beta" ]]||return # Temporary beta check until function fleshed out
   if [[ $(which file) ]];then
     if [[ -z $quick ]];then # Quick not selected?
       readelf -h $@ 2>/dev/null|sed -e 's/^[ \t]*//
@@ -210,7 +209,7 @@ fetch_readelf() {
 
 fetch_lsattr() {
   # Grab extended attributes
-  if [[ -e $(which lsattr) ]];then
+  if [[ $(which lsattr) ]];then
     if [[ -z $quick ]];then # Quick not selected?
       list_print=("")
       list_set="$(lsattr $@ 2>/dev/null|awk '{print $1}')"
@@ -272,7 +271,7 @@ fetch_lsattr() {
 fetch_getfacl() {
   # Extended File ACL options
   [[ -n "$beta" ]]||return # Temporary beta check until function fleshed out
-  if [[ -e $(which getfacl) ]];then
+  if [[ $(which getfacl) ]];then
     if [[ -z $quick ]];then # Quick not selected?
       getfacl -c -s $@ 2>/dev/null|sed '/^$/d' #placeholder
     else # -c drops header, -s skips non-augmented or regular DAC files
@@ -285,7 +284,7 @@ fetch_getfacl() {
 
 fetch_openssl() {
   # Run through the different message digest hashes in openssl
-  if [[ -e $(which openssl) ]];then
+  if [[ $(which openssl) ]];then
     for opt in md4 md5 ripemd160 sha sha1 sha224 sha256 sha384 sha512 whirlpool;do
       if [[ -z $quick ]];then # Quick not selected?
         # Run openssl digest select, awk parse type & hash, sed delete blanks & lowercase it
@@ -303,7 +302,7 @@ fetch_openssl() {
 
 fetch_hashdeep() {
   # If it's installed run given prog through ssdeep as well
-  if [[ -e $(which hashdeep) ]];then
+  if [[ $(which hashdeep) ]];then
     if [[ -z $quick ]];then # Quick not selected?
       while IFS=, read hashdeep_size hashdeep_tiger hashdeep_file;do
         print_res hashdeep_size
@@ -320,7 +319,7 @@ fetch_hashdeep() {
 
 fetch_ssdeep() {
   # If it's installed run given prog through ssdeep as well
-  if [[ -e $(which ssdeep) ]];then
+  if [[ $(which ssdeep) ]];then
     if [[ -z $quick ]];then # Quick not selected?
       while IFS=: read ssdeep_blocksize ssdeep_hash1 ssdeep_hash2 ;do
         print_res ssdeep_blocksize

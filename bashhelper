@@ -39,6 +39,11 @@ hr() {
   printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' "${1--}"
 }
 
+ezstrings() {
+  # Simple method to view human readable text in binary
+  cat -A $@|sed '/\^@/d;/\^[ABCDEFGHIJKLMNOPQRSTUVWXYZ]/d;s/.$//;'
+}
+
 detect_pacman() {
   # Detect the package manager installed
   if [[ -e ~/.config/bashhelper.conf ]];then

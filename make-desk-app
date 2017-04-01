@@ -1,0 +1,101 @@
+#!/bin/bash
+# Simple script to create XFCE desktop-application files
+# There is exo-desktop-item-edit but it's limited
+
+main() {
+  initialize
+  parse_args $@
+  publish
+}
+
+initialize() {
+  app_folder="/usr/share/applications"
+  version="0.2.0 Qry3vavna"
+cat << TODO
+verify icon by name or suggest
+interactive mode w/ suggestions (bash_autocomplete?)
+description suggest based on (whatis)
+optional terminals besides Terminator
+lookup differences between keywords & categories
+automatically Uppercase first letter of each item in list
+automatically add to menu layout of tools
+TODO
+}
+
+parse_args() {
+  while (($#));do
+    case $1 in
+      -c*|--c*) app_cat+=( $2 );;
+      -C*|--C*) app_com="$2";;
+      -d*|--d*) app_des="$2";;
+      -f*|--f*) app_folder="${2:=$app_folder}";;
+      -h*|--h*) usage;exit;;
+      -i*|--i*) app_icon="$2";;
+      -k*|--k*) app_keys+=( $2 );;
+      -n*|--n*) app_name="${2:?'[-n] ERROR: need a name'}";;
+      -t*|--t*) terminal=1;;
+    esac
+  shift
+  done
+  process_list app_cat
+  process_list app_keys
+}
+
+process_list() {
+  k="$@"; v="${@}[@]"
+  for item in ${!v};do
+    new_list+="$item;"
+  done
+  declare $k="$new_list"
+}
+
+publish() {
+if [[ -n "$terminal" ]];then
+  app_exec="terminator -T \".: $app_name :.\" -x sh -c \"$app_com;\${SHELL:-bash}\""
+else
+  app_exec="$app_com"
+fi
+cat << XFCE
+[Desktop Entry]
+Name="$app_name"
+Comment="$app_des"
+TryExec="$app_exec"
+Exec="$app_exec"
+Icon="$app_icon"
+Type=Application
+Categories="$app_cat"
+StartupNotify=true
+X-Ubuntu-Gettext-Domain="$app_name"
+X-Ayatana-Desktop-Shortcuts=NewWindow;
+Keywords="$app_keys"
+[NewWindow Shortcut Group]
+Name=Open a New Window
+Exec="$app_exec"
+TargetEnvironment=Unity
+XFCE
+}
+
+usage() {
+  cat << EOF
+
+$(basename $0 2>/dev/null||echo $0) $version
+
+Create a new desktop application config file based on the given input
+
+USAGE: $(basename $0 2>/dev/null||echo $0) [OPTIONS] file
+
+      -c|--cat      List of app categories, semi colon delimited
+      -C|--Com      Command for execution
+      -d|--des      Application description
+      -f|--fold     Destination folder (not used yet)
+      -i|--icon     Application icon
+      -k|--key      Application key word search list
+      -n|--name     Application name
+      -t|--term     Boolean for terminal vs GUI application
+      -h|--help		This cruft
+
+EOF
+}
+
+#=-+-=#
+main $@
