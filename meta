@@ -156,8 +156,14 @@ fetch_objdump() {
   # Use 'objdump' to fetch binary header info
   [[ -n "$beta" ]]||return # Temporary beta check until function fleshed out
   if [[ $(which objdump) ]];then
-    if [[ -z $quick ]];then # Quick not selected?
-      objdump -f $@ 2>/dev/null|sed -e '/^$/d;/file form/s/^.* \([^ ][^ ]*\)/obj_file_format \1/;/architect/s/architecture/obj_arch/;/arch/s/, flags/\nobj_flags:/;s/:$//;/flags/{n;s/^/obj_set: /};/start add/s/start address/obj_start_addr: /'
+    if [[ -z $quick ]];then # Quick not selected? sed rocks
+      objdump -f $@ 2>/dev/null|sed -e '/^$/d
+        /file form/s/^.* \([^ ][^ ]*\)/obj_file_format:\t\1/
+        /architect/s/architecture:/obj_arch:\t/
+        /arch/s/, flags/\nobj_flags:\t/
+        s/:$//
+        /flags/{n;s/^/obj_set:\t/}
+        /^start /s/start address/obj_start_addr:\t/'
     else
       echo -en "objdump: "
       objdump -f $@ 2>/dev/null
@@ -172,7 +178,27 @@ fetch_readelf() {
   [[ -n "$beta" ]]||return # Temporary beta check until function fleshed out
   if [[ $(which file) ]];then
     if [[ -z $quick ]];then # Quick not selected?
-      readelf -h $@ 2>/dev/null|sed -e 's/^[ \t]*//' # Place holder
+      readelf -h $@ 2>/dev/null|sed -e 's/^[ \t]*//
+        /^ELF H.*:/d
+        s/Magic:[ \t]*/elf_magic:\t/
+        s/Class:[ \t]*/elf_class:\t/
+        s/Data:[ \t]*/elf_data:\t/
+        /^Ver.*0x/s/Version:[ \t]*/elf_hex_ver:\t/
+        /^Ver./s/Version:[ \t]*/elf_version:\t/
+        s/OS\/ABI:[ \t]*/elf_os_abi:\t/
+        s/ABI Version:[ \t]*/elf_abi_ver:\t/
+        /^Type:/s/Type:[ \t]*/elf_type:\t/
+        s/Machine:[ \t]*/elf_machine:\t/
+        s/^Entry.*\:[ \t]*/elf_entry_pnt_addr:\t/
+        s/^Sta.*prog.*\:[ \t]*/elf_start_prg_head:\t/
+        s/^Sta.*sect.*\:[ \t]*/elf_start_sec_head:\t/
+        s/^Flags:[ \t]*/elf_flags:\t/
+        s/^Siz.*this.*\:[ \t]*/elf_size_this_head:\t/
+        s/^Siz.*pro.*\:[ \t]*/elf_size_prog_head:\t/
+        s/^Num.*pro.*\:[ \t]*/elf_num_prog_head:\t/
+        s/^Siz.*sec.*\:[ \t]*/elf_size_sec_head:\t/
+        s/^Num.*sec.*\:[ \t]*/elf_num_sec_head:\t/
+        s/^Section.*\:[ \t]*/elf_sec_head_str_tbl_index:\t/'
     else
       echo -en "readelf: "
       readelf -h $@ 2>/dev/null
