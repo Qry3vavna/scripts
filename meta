@@ -49,6 +49,8 @@ validate_file() {
         echo -e "\n[-] File unreadable, check permissions" # ERR3
         usage; exit 3
       fi
+    elif [[ $(which "$@") ]];then # Try to find full path of executable
+      this_file="$(which $@)" # reset variable to full path
     else
       echo -e "\n[-] File does not exist, or perhaps a directory or other type" # ERR2
       usage; exit 2
@@ -106,6 +108,7 @@ fetch_file() {
       if [[ $(echo $file_mime|grep symlink) ]];then # Try to follow the link
         file_sym="$(file -bL $@ 2>/dev/null)"
         file_deref $@ # Unwind mutliple referenced links
+        file_follow $@ # Follow full link path discovering file types
         file_list+=( sym ) # Add to print list
       fi
       if [[ $(echo $file_full|grep compress) ]];then # Try to decompress
@@ -141,12 +144,20 @@ file_deref() {
   fi
 }
 
+file_follow() {
+  # Follow link path with namei if installed
+  if [[ $(which namei) ]];then
+    file_namei="$(namei $@ 2>/dev/null)"
+    file_list+=(namei) # Add namei to print queue
+  fi
+}
+
 fetch_objdump() {
   # Use 'objdump' to fetch binary header info
   [[ -n "$beta" ]]||return # Temporary beta check until function fleshed out
-  if [[ -e $(which objdump) ]];then
+  if [[ $(which objdump) ]];then
     if [[ -z $quick ]];then # Quick not selected?
-      objdump -f $@ 2>/dev/null # Place holder
+      objdump -f $@ 2>/dev/null|sed -e '/^$/d;/file form/s/^.* \([^ ][^ ]*\)/obj_file_format \1/;/architect/s/architecture/obj_arch/;/arch/s/, flags/\nobj_flags:/;s/:$//;/flags/{n;s/^/obj_set: /};/start add/s/start address/obj_start_addr: /'
     else
       echo -en "objdump: "
       objdump -f $@ 2>/dev/null
@@ -159,9 +170,9 @@ fetch_objdump() {
 fetch_readelf() {
   # Use 'readelf' to fetch binary header info
   [[ -n "$beta" ]]||return # Temporary beta check until function fleshed out
-  if [[ -e $(which file) ]];then
+  if [[ $(which file) ]];then
     if [[ -z $quick ]];then # Quick not selected?
-      readelf -h $@ 2>/dev/null # Place holder
+      readelf -h $@ 2>/dev/null|sed -e 's/^[ \t]*//' # Place holder
     else
       echo -en "readelf: "
       readelf -h $@ 2>/dev/null
