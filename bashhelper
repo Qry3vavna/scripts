@@ -1,19 +1,18 @@
 # Part of github/Qry3vavna/
-# version 0.2.1
+# version 0.2.2
 
 alias l='ls -al'
 alias lf='ls -alF'
+alias la='ls -AlF'
+alias ll='ls -lF'
+alias pu='pushd'
+alias po='popd'
 alias nohist='unset HISTFILE HISTSIZE HISTFILESIZE'
 alias install=get
 
 filew() {
   # run file against any tool in the $PATH directory by name
   file $(which $@) 2>/dev/null
-}
-
-metaw() {
-  # run meta script against any tool in the $PATH directory by name
-  meta $(which $@) 2>/dev/null
 }
 
 bounce() {
@@ -44,6 +43,33 @@ ezstrings() {
   cat -A $@|sed '/\^@/d;/\^[ABCDEFGHIJKLMNOPQRSTUVWXYZ]/d;s/.$//;'
 }
 
+gcp() {
+  # Easier git clone pushd
+  git clone $@
+  local project="$(echo ${@##*/}|cut -d. -f1)"
+  pushd $project
+}
+
+w2i() {
+  # Web to image; take a screenshot of a webpage
+  local url="$1"
+  local img="$(echo $url|awk -F'//' '{print $2}'|tr '/' '_')"
+  echo "[*] Fetching screenshot of: $url"
+  wkhtmltoimage -q $url /tmp/${img:-$url}.png
+  echo "[*] Saved to: /tmp/${img:-$url}.png"
+  see "/tmp/${img:-$url}.png" 2>/dev/null
+}
+
+define() {
+  # English dictionary definitions via git.io/trans tools
+  trans -d :en "$@"
+}
+
+calc() {
+  # calculator function wrapper for built in gnome-calculator aligator
+  gnome-calculator -s "$@"
+}
+
 detect_pacman() {
   # Detect the package manager installed
   if [[ -e ~/.config/bashhelper.conf ]];then
@@ -64,7 +90,7 @@ set_pm() {
   local pm="$@"
   if [[ -x $(which $pm) ]];then # Package manage exists and is executable
     case ${pm} in
-      apt)    this_has="apt list -a --installed \"*\${@}*\""
+      apt)    this_has="apt list -a --installed \"*\${@}*\" 2>/dev/null || echo \${@}: Not installed"
               this_show="apt show \${@};dpkg -L \${@}"
               this_search="apt search"
               this_remove="apt remove \${@}"
@@ -72,7 +98,7 @@ set_pm() {
               this_upgrade="apt upgrade"
               this_install="apt intall \${@}"
         ;;
-      apt-get)this_has="dpkg -l \${@}"
+      apt-get)this_has="dpkg -l \${@} 2>/dev/null || echo \${@}: Not installed"
               this_show="dpkg -L \${@}"
               this_search="apt-cache search"
               this_remove="apt-get remove \${@}"
@@ -80,7 +106,7 @@ set_pm() {
               this_upgrade="apt-get upgrade -y"
               this_install="apt-get install -y \${@}"
         ;;
-      yum)    this_has="rpm -q \${@}"
+      yum)    this_has="rpm -q \${@} 2>/dev/null || echo \${@}: Not installed"
               this_show="rpm -ql \${@}"
               this_search="yum search"
               this_remove="yum remove \${@}"
@@ -88,7 +114,7 @@ set_pm() {
               this_upgrade="yum upgrade"
               this_install="yum install -y \${@}"
         ;;
-      dnf)    this_has="dnf list --installed \${@}"
+      dnf)    this_has="dnf list --installed \${@} 2>/dev/null || echo \${@}: Not installed"
               this_show="dnf info \${@}"
               this_search="dnf search"
               this_remove="dnf erase \${@}"
@@ -103,6 +129,7 @@ set_pm() {
 show() {
   # show / search tools installed
   if [ "$1" != "" ];then
+    eval "$this_has"
     eval "$this_show" 2>/dev/null
     [[ $? -gt 0 ]] && echo $@ not found or installed
   fi
@@ -138,6 +165,11 @@ update() {
 have() {
   # quick check to see if the given tool is installed
   eval "$this_has"
+}
+
+remove() {
+  # remove installed tool
+  eval "$this_remove"
 }
 
 #=----+----=#
