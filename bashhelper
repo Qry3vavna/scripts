@@ -33,6 +33,17 @@ p() {
   terms=; t=; q=
 }
 
+h() {
+  # quick search through history
+  terms="${*--}"
+  q="grep -vw h "
+  for t in ${terms[*]};do
+    q="$q|grep -i -- $t"
+  done
+  eval "history|$q"
+  terms=; t=; q=
+}
+
 hr() {
   # print horizontal line the whole width of terminal. By default with '-'. USAGE: hr || hr \# || hr x
   printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' "${1--}"
