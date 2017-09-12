@@ -8,6 +8,7 @@ alias ll='ls -lF'
 alias pu='pushd'
 alias po='popd'
 alias nohist='unset HISTFILE HISTSIZE HISTFILESIZE'
+alias s='systemctl'
 alias install=get
 
 filew() {
@@ -87,7 +88,7 @@ detect_pacman() {
     pm="$(grep pm ~/.config/bashhelper.conf|cut -d= -f2)"
     set_pm $pm
   else
-    for pm in apt-get apt yum dnf pacman emerge;do
+    for pm in apt-get apt yum dnf pacman emerge snap;do
       if [[ -x $(which ${pm}) ]];then
         set_pm $pm
         break
@@ -132,6 +133,14 @@ set_pm() {
               this_update="dnf update"
               this_upgrade="dnf upgrade --refresh"
               this_install="dnf install -y \${@}"
+        ;;
+      snap)   this_has="snap list |grep \${@} 2>/dev/null || echo \${@}: Not installed"
+              this_show="snap info \${@}"
+              this_search="snap find"
+              this_remove="snap remove \${@}"
+              this_update="snap refresh"
+              this_upgrade="snap upgrade"
+              this_install="snap install \${@}"
         ;;
     esac
   fi
