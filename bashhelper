@@ -1,5 +1,5 @@
 # Part of github/Qry3vavna/
-# version 0.2.3
+# version 0.2.4
 
 alias l='ls -al'
 alias lf='ls -alF'
@@ -81,6 +81,22 @@ calc() {
   # calculator function wrapper for built in gnome-calculator aligator
   gnome-calculator -s "$@"
 }
+
+ocrpdf() {
+  # wrapper for tesseract to OCR a pdf
+  # Thanks: http://www.automatingosint.com/blog/2015/10/osint-gangs-of-detroit/
+  # apt install imagemagick libtesseract3 libtesseract-dev tesseract-ocr
+  fn="${1%.*}"
+  ex="${1##*.}"
+  echo "[*] Start OCR on $fn"
+  convert -density 300 ${fn}.${ex} -depth 8 ${fn}.tiff
+  tesseract ${fn}.tiff $fn
+  rm ${fn}.tiff
+  ls ${fn}.*
+  echo "[*] Completed OCR on $fn"
+}
+
+#== Package manager below this line ==#
 
 detect_pacman() {
   # Detect the package manager installed
