@@ -8,11 +8,12 @@ main() {
 }
 
 initialize() {
-  version="0.1 ctime-mod :: github.com/Qry3vavna"
+  version="0.2 ctime-mod :: github.com/Qry3vavna"
   set_to=""
 }
 
 parse_args() {
+  [[ -z "$1" ]] && $0 -h
   while [ "$1" != "" ]; do
     case $1 in
       -c|--ctime) shift;set_to="$1";;
