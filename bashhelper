@@ -96,6 +96,16 @@ ocrpdf() {
   echo "[*] Completed OCR on $fn"
 }
 
+this() {
+  hostnamectl 2>/dev/null || hostname; uname -a; cat /etc/*{release,edition,version,issue}* 2>/dev/null
+  datetimectl 2>/dev/null || date; ntpq -p 2>/dev/null
+}
+
+n() {
+  curl ifconfig.me 2>/dev/null
+  ip -o -4 a || ifconfig -a
+}
+
 #== Package manager below this line ==#
 
 detect_pacman() {
