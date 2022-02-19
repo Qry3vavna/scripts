@@ -8,6 +8,7 @@ alias nohist='unset HISTFILE HISTSIZE HISTFILESIZE'
 alias avscan="nmap -sS -Pn $1 -p 1110,2221,2222,2223,2224,2225,2226,2967,4711,4712,5051,5555,6646,7000,7001,8081,8086,8087,8443,8742,9090,15000,38292,38293" 
 alias pu=pushd
 alias po=popd
+alias s=systemctl
 if [[ $(which zenmap) ]];then
   alias zenmap='notify-send "HEY" "Stop being lazy\n Unless you want to use the mapping feature \
   \n you should really use nmap\n from the command line instead" 2>/dev/null ; /usr/bin/zenmap'
